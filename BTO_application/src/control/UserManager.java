@@ -1,8 +1,9 @@
 package control;
-import entities.*;
-import utils.FileManager;
-
+import entities.Applicant;
+import entities.Manager;
+import entities.Officer;
 import java.util.*;
+import utils.FileManager;
 
 public class UserManager {
 	private List<Applicant>applicants = new ArrayList<>();
@@ -52,9 +53,9 @@ public class UserManager {
     }
 	
     public void loadAllUsers() {
-    	loadApplicants("data/ApplicantList.csv");
-    	loadOfficers("data/OfficerList.csv");
-    	loadManagers("data/ManagerList.csv");
+    	loadApplicants("BTO_application/data/ApplicantList.csv");
+    	loadOfficers("BTO_application/data/OfficerList.csv");
+    	loadManagers("BTO_application/data/ManagerList.csv");
     }
     
     public List<Applicant> getApplicants(){

@@ -1,15 +1,13 @@
 package main;
 
-import control.UserManager;
-
-import java.io.File;
-
 import auth.LoginManager;
 import control.ApplicantManager;
 import control.ApplicationManager;
 import control.EnquiryManager;
 import control.OfficerRegistrationManager;
 import control.ProjectManager;
+import control.UserManager;
+import java.io.File;
 
 public class Main {
     public static void main(String[] args) {
@@ -21,16 +19,16 @@ public class Main {
         
         //load project data
         ProjectManager projectManager = new ProjectManager();
-        projectManager.loadProjects("data/ProjectList.csv");
+        projectManager.loadProjects("BTO_application/data/ProjectList.csv");
         
         
         //load enquiry data
         EnquiryManager enquiryManager = new EnquiryManager();
-        enquiryManager.loadEnquiries("data/enquiries.csv");
+        enquiryManager.loadEnquiries("BTO_application/data/enquiries.csv");
         
         //load applications
         ApplicationManager applicationManager = new ApplicationManager();
-        applicationManager.loadApplications("data/applications.csv", userManager.getApplicants(), projectManager.getProjects());
+        applicationManager.loadApplications("BTO_application/data/applications.csv", userManager.getApplicants(), projectManager.getProjects());
         
         //Create control classes for applicant functionalities
         ApplicantManager applicantManager1 = new ApplicantManager(projectManager.getProjects());

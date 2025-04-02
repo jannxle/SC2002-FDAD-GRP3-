@@ -1,17 +1,16 @@
 package auth;
 
-import java.util.Scanner;
-
 import boundary.ApplicantUI;
 import boundary.HDBManagerUI;
 import boundary.HDBOfficerUI;
-import control.UserManager;
 import control.ApplicantManager;
 import control.ApplicationManager;
 import control.EnquiryManager;
 import control.OfficerRegistrationManager;
 import control.ProjectManager;
+import control.UserManager;
 import entities.*;
+import java.util.Scanner;
 
 
 public class LoginManager {
