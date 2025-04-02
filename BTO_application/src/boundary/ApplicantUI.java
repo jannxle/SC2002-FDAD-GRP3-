@@ -37,6 +37,8 @@ public class ApplicantUI {
 		boolean logout = false;
 		
 		while(!logout) {
+			// THIS IS A TEST TO SEE IF THIS GETS PUSHED UP
+			
 			System.out.println("========BTO Management Main Page========");
 			System.out.println("1. Change Password");
 			System.out.println("2. View Available List of Projects");
