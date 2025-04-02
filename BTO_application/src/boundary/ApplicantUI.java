@@ -324,3 +324,5 @@ public class ApplicantUI {
         System.out.println();
     }
 }
+
+
