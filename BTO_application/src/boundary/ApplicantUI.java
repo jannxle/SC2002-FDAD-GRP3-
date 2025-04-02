@@ -1,20 +1,17 @@
 package boundary;
 
-import entities.Applicant;
-import entities.Enquiry;
-import entities.Officer;
-import entities.Project;
-import entities.Room;
-import enums.RoomType;
-
-import java.util.List;
-import java.util.Scanner;
-
 import auth.LoginManager;
 import control.ApplicantManager;
 import control.ApplicationManager;
 import control.EnquiryManager;
 import control.UserManager;
+import entities.Applicant;
+import entities.Enquiry;
+import entities.Project;
+import entities.Room;
+import enums.RoomType;
+import java.util.List;
+import java.util.Scanner;
 
 public class ApplicantUI {
 	protected Applicant applicant;
@@ -327,3 +324,5 @@ public class ApplicantUI {
         System.out.println();
     }
 }
+
+

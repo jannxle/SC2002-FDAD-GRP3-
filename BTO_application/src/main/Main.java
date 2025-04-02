@@ -1,18 +1,17 @@
 package main;
 
-import control.UserManager;
-
-import java.io.File;
-
 import auth.LoginManager;
 import control.ApplicantManager;
 import control.ApplicationManager;
 import control.EnquiryManager;
 import control.OfficerRegistrationManager;
 import control.ProjectManager;
+import control.UserManager;
+import java.io.File;
 
 public class Main {
     public static void main(String[] args) {
+        System.out.println("hello");
     	System.out.println("Working Directory: " + new File(".").getAbsolutePath());
 
     	//load user data

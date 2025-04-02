@@ -1,8 +1,7 @@
 package boundary;
 
-import java.util.Scanner;
-
 import entities.Manager;
+import java.util.Scanner;
 
 public class HDBManagerUI {
 	private Manager manager;
@@ -16,5 +15,4 @@ public class HDBManagerUI {
 		System.out.println("====BTO Management Main Page====");
 		System.out.println("Hello Manager!");
 	}
-	
 }
