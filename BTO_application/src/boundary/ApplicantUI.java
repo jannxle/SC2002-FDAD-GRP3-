@@ -88,7 +88,7 @@ public class ApplicantUI {
 				System.out.println();
 				System.out.println("Logging out...");
 				System.out.println();
-				//enquiryManager.saveEnquiries("data/enquiries.csv");
+				enquiryManager.saveEnquiries("data/enquiries.csv");
 				//applicationManager.saveApplications("data/Applications.csv", userManager.getApplicants());
 				loginManager.login();
 				break;
