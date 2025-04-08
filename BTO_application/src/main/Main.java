@@ -11,7 +11,6 @@ import java.io.File;
 
 public class Main {
     public static void main(String[] args) {
-        System.out.println("hello");
     	System.out.println("Working Directory: " + new File(".").getAbsolutePath());
 
     	//load user data
@@ -20,16 +19,18 @@ public class Main {
         
         //load project data
         ProjectManager projectManager = new ProjectManager();
-        projectManager.loadProjects("BTO_application/data/ProjectList.csv");
+        projectManager.loadProjects("data/ProjectList.csv");
+        
+        projectManager.linkOfficersToProject(userManager);
         
         
         //load enquiry data
         EnquiryManager enquiryManager = new EnquiryManager();
-        enquiryManager.loadEnquiries("BTO_application/data/enquiries.csv");
+        enquiryManager.loadEnquiries("data/enquiries.csv");
         
         //load applications
         ApplicationManager applicationManager = new ApplicationManager();
-        applicationManager.loadApplications("BTO_application/data/applications.csv", userManager.getApplicants(), projectManager.getProjects());
+        applicationManager.loadApplications("data/applications.csv", userManager.getApplicants(), projectManager.getProjects());
         
         //Create control classes for applicant functionalities
         ApplicantManager applicantManager1 = new ApplicantManager(projectManager.getProjects());

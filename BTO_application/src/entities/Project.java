@@ -17,7 +17,7 @@ public class Project {
 	private boolean visibility;
 	private String officer;
 
-	private static final DateTimeFormatter dtf = DateTimeFormatter.ofPattern("d/M/yy");
+	private static final DateTimeFormatter dtf = DateTimeFormatter.ofPattern("dd/M/yy");
 	
 	//Constructor
 	public Project(String projectName, String neighbourhood, LocalDate openDate,
@@ -118,8 +118,9 @@ public class Project {
         
         String manager = parts[10].trim();
         int officerSlot = Integer.parseInt(parts[11].trim());
-        String officer = parts[12].trim();
-
+        String officer1 = parts[12].trim();
+        //String officer2 = parts[13].trim();
+        
         // create two Room objects
         Room room1 = new Room(roomType1, numUnitsType1, priceType1);
         Room room2 = new Room(roomType2, numUnitsType2, priceType2);
@@ -128,9 +129,32 @@ public class Project {
         boolean visibility = true; // default or parse from CSV if you have a column for it.
         
         
-        return new Project(projectName, neighborhood, openDate, closeDate, manager, officerSlot, rooms, visibility, officer);
+        return new Project(projectName, neighborhood, openDate, closeDate, manager, officerSlot, rooms, visibility, officer1);
   
     }
 
+    public String toString() {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+        StringBuilder sb = new StringBuilder();
+        sb.append("Project Name: ").append(projectName).append("\n");
+        sb.append("Neighbourhood: ").append(neighbourhood).append("\n");
+        
+        if (rooms != null && rooms.size() > 0) {
+            sb.append("Flat Details:\n");
+            for (Room room : rooms) {
+                sb.append("	Type: ").append(room.getRoomType() == RoomType.TwoRoom ? "2-Room" : "3-Room");
+                sb.append("   Total Units: ").append(room.getTotalRooms());
+                sb.append("   Price: ").append(room.getPrice()).append("\n");
+            }
+        }
+        sb.append("Application Open Date: ").append(openDate.format(formatter)).append("\n");
+        sb.append("Application Close Date: ").append(closeDate.format(formatter)).append("\n");
+        sb.append("Manager: ").append(manager).append("\n");
+        sb.append("Officer Slot(s): ").append(officerSlot).append("\n");
+        sb.append("Assigned Officer(s): ").append((officer != null && !officer.trim().isEmpty()) ? officer : "None").append("\n");
+        sb.append("Visibility: ").append(visibility ? "On" : "Off").append("\n");
+        
+        return sb.toString();
+    }
 	
 }

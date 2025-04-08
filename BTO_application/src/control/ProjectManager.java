@@ -7,7 +7,9 @@ import enums.RoomType;
 import utils.FileManager;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class ProjectManager {
     private List<Project> projects = new ArrayList<>();
@@ -73,6 +75,28 @@ public class ProjectManager {
             }
         }
         return null;
+    }
+    
+    /**
+     * Returns a list of projects available for officer registration.
+     * A project is available if the number of officers already registered is less than the available officer slots.
+     *
+     * @return List of projects that can still accept additional officers.
+     */
+    public List<Project> getAvailableProjects() {
+        return projects.stream()
+                .filter(p -> {
+                    String officerField = p.getOfficer();
+                    int assignedCount = 0;
+                    if (officerField != null && !officerField.trim().isEmpty()) {
+                        // Count officers by splitting on semicolon and trimming whitespace
+                        assignedCount = (int) Arrays.stream(officerField.split(";"))
+                                                    .filter(s -> !s.trim().isEmpty())
+                                                    .count();
+                    }
+                    return assignedCount < p.getOfficerSlot();
+                })
+                .collect(Collectors.toList());
     }
     
     
@@ -146,46 +170,84 @@ public class ProjectManager {
         return false;
     }
     
-    //Assigns an officer to a project
+    //Assigns an officer to a project (for Manager)
     public boolean assignOfficerToProject(String projectName, String officerName) {
     	Project project = findProjectByName(projectName);
     	if(project != null) {
-    		// Check if an officer is already assigned
-            if (project.getOfficer() != null && !project.getOfficer().isEmpty()) {
-                System.out.println("Project " + projectName + " already has an officer assigned: " + project.getOfficer());
-                return false;
-            }
-            // Optionally check if the project has an available officer slot
-            if (project.getOfficerSlot() <= 0) {
+    		String officerField = project.getOfficer();
+    		List<String> officerList = new ArrayList<>();
+    		if (officerField != null && !officerField.trim().isEmpty()) {
+    			officerList = Arrays.stream(officerField.split(";"))
+    							.map(String::trim)
+    							.filter(s -> !s.isEmpty())
+    							.collect(Collectors.toList());
+    		}
+    		
+            // Check if there is an available officer slot.
+            if (officerList.size() >= project.getOfficerSlot()) {
                 System.out.println("No officer slot available for project " + projectName);
                 return false;
             }
-            // Assign the officer
-            project.setOfficer(officerName);
+            // Assign the officer by adding to the semicolon-separated list.
+            if (officerField == null || officerField.trim().isEmpty()) {
+                project.setOfficer(officerName);
+            } else {
+                project.setOfficer(officerField + ";" + officerName);
+            }
             System.out.println("Officer " + officerName + " assigned to project " + projectName);
             return true;
         }
         System.out.println("Project " + projectName + " not found.");
         return false;
+
     }
     
     public void updateOfficerProject(Officer officer) {
         for (Project project : projects) {
-            if (project.getOfficer() != null && !project.getOfficer().isEmpty() &&
-                project.getOfficer().equalsIgnoreCase(officer.getName())) {
-                officer.setAppliedProject(project);
-                // Optionally, if an officer can only have one project, you might break here.
-                break;
+            String officerField = project.getOfficer();
+            if (officerField != null && !officerField.isEmpty()) {
+                List<String> officerList = Arrays.stream(officerField.split(";"))
+                                                 .map(String::trim)
+                                                 .filter(s -> !s.isEmpty())
+                                                 .collect(Collectors.toList());
+                // If the officer is registered in this project
+                if (officerList.stream().anyMatch(name -> name.equalsIgnoreCase(officer.getName()))) {
+                    officer.setAppliedProject(project);
+                    // If an officer is only allowed to be assigned to one project, break out.
+                    break;
+                }
             }
         }
     }
     
+    public void linkOfficersToProject(UserManager userManager) {
+        for (Project p : projects) {
+            String officerField = p.getOfficer();
+            if (officerField != null && !officerField.isEmpty()) {
+                // Split on semicolon and trim each name.
+                String[] officerNames = officerField.split(";");
+                for (String name : officerNames) {
+                    name = name.trim();
+                    if (!name.isEmpty()) {
+                        // Make sure findOfficerByName also uses case-insensitive comparison.
+                        Officer officer = userManager.findOfficerByName(name);
+                        if (officer != null) {
+                            // Set the registered project for the officer
+                            officer.setRegisteredProject(p);
+                        } else {
+                            System.out.println("Officer " + name + " not found in user manager.");
+                        }
+                    }
+                }
+            }
+        }
+    }
     
     /**
      * Helper method to convert a Project object into a CSV-formatted string.
      */
     private String toCSV(Project p) {
-        // Assume each project has exactly two Room objects.
+        // Each project has exactly two Room objects.
         List<Room> rooms = p.getRooms();
         String type1 = "";
         String units1 = "";
@@ -204,10 +266,10 @@ public class ProjectManager {
             price2 = String.valueOf(r2.getPrice());
         }
         // Format the dates using the same pattern as in your Project class.
-        String openDate = p.getOpenDate().format(DateTimeFormatter.ofPattern("d/M/yy"));
-        String closeDate = p.getCloseDate().format(DateTimeFormatter.ofPattern("d/M/yy"));
+        String openDate = p.getOpenDate().format(DateTimeFormatter.ofPattern("dd/M/yy"));
+        String closeDate = p.getCloseDate().format(DateTimeFormatter.ofPattern("dd/M/yy"));
         // Officer field is not managed here, so we leave it blank.
-        String officer = "";
+        String officerStr = p.getOfficer();
         
         return p.getName() + "," +
                p.getNeighbourhood() + "," +
@@ -215,6 +277,6 @@ public class ProjectManager {
                type2 + "," + units2 + "," + price2 + "," +
                openDate + "," + closeDate + "," +
                p.getManager() + "," + p.getOfficerSlot() + "," +
-               officer;
+               officerStr;
     }
 }

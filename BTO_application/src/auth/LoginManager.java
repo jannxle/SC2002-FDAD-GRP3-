@@ -27,6 +27,7 @@ public class LoginManager {
 		this.enquiryManager = enquiryManager;
 		this.applicationManager = applicationManager;
 		this.projectManager = projectManager;
+		this.officerRegistrationManager = officerRegistrationManager;
 	}
 	
 	/**
@@ -72,7 +73,7 @@ public class LoginManager {
 					
 					//creates new object and passes an Applicant to it
 					//calls constructor of Applicant UI
-					ApplicantUI applicantUI = new ApplicantUI(a, applicantManager, userManager, this, enquiryManager, applicationManager);
+					ApplicantUI applicantUI = new ApplicantUI(a, applicantManager, userManager, this, enquiryManager, applicationManager, projectManager);
 					applicantUI.showMenu();
 					found = true;
 					loggedIn = true;

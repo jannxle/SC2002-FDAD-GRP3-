@@ -53,9 +53,9 @@ public class UserManager {
     }
 	
     public void loadAllUsers() {
-    	loadApplicants("BTO_application/data/ApplicantList.csv");
-    	loadOfficers("BTO_application/data/OfficerList.csv");
-    	loadManagers("BTO_application/data/ManagerList.csv");
+    	loadApplicants("data/ApplicantList.csv");
+    	loadOfficers("data/OfficerList.csv");
+    	loadManagers("data/ManagerList.csv");
     }
     
     public List<Applicant> getApplicants(){
@@ -151,6 +151,15 @@ public class UserManager {
             }
         }
         return false;
+    }
+    
+    public Officer findOfficerByName(String officerName) {
+    	for (Officer o:getOfficers()) {
+    		if (o.getName().trim().equalsIgnoreCase(officerName.trim())) {
+    		return o;
+    		}
+    	}
+    	return null;
     }
 }
     

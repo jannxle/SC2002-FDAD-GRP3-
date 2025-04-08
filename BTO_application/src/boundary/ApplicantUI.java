@@ -4,6 +4,7 @@ import auth.LoginManager;
 import control.ApplicantManager;
 import control.ApplicationManager;
 import control.EnquiryManager;
+import control.ProjectManager;
 import control.UserManager;
 import entities.Applicant;
 import entities.Enquiry;
@@ -20,16 +21,18 @@ public class ApplicantUI {
 	protected UserManager userManager;
 	protected LoginManager loginManager;
 	protected EnquiryManager enquiryManager;
+	protected ProjectManager projectManager;
 	private Scanner scanner = new Scanner(System.in);
 	
 	
-	public ApplicantUI(Applicant applicant, ApplicantManager applicantManager, UserManager userManager, LoginManager loginManager, EnquiryManager enquiryManager, ApplicationManager applicationManager) {
+	public ApplicantUI(Applicant applicant, ApplicantManager applicantManager, UserManager userManager, LoginManager loginManager, EnquiryManager enquiryManager, ApplicationManager applicationManager, ProjectManager projectManager) {
 		this.applicant = applicant;
 		this.applicantManager = applicantManager;
 		this.userManager = userManager;
 		this.loginManager = loginManager;
 		this.enquiryManager = enquiryManager;
 		this.applicationManager = applicationManager;
+		this.projectManager = projectManager;
 	}
 
 
@@ -48,9 +51,24 @@ public class ApplicantUI {
 			System.out.println("8. View Profile");
 			System.out.println("9. Log out");
 			System.out.println("----------------------------------------");
-			System.out.print("Enter your choice: ");
-			int choice = scanner.nextInt();
-			System.out.println();
+
+
+	        // Validate integer input
+	        int choice = 0;
+	        boolean validInput = false;
+	        while (!validInput) {
+	            System.out.print("Enter your choice: ");
+	            if (scanner.hasNextInt()) {
+	                choice = scanner.nextInt();
+	                scanner.nextLine(); // consume the rest of the line
+	                validInput = true;
+	            } else {
+	                System.out.println("Invalid input. Please enter a valid number.");
+	                scanner.nextLine(); // discard the invalid input
+	            }
+	        }
+	        
+	        System.out.println("----------------------------------------");
 		
 			switch(choice) {
 			case 1: 
@@ -71,10 +89,15 @@ public class ApplicantUI {
 				requestWithdrawal();
 				break;
 			case 6:
+				System.out.println();
 				submitEnquiry();
+				enquiryManager.saveEnquiries("data/enquiries.csv");
+
 				break;
 			case 7:
+				System.out.println();
 				editEnquiry();
+				enquiryManager.saveEnquiries("data/enquiries.csv");
 				break;
 			case 8:
 				//implement profile
@@ -246,18 +269,46 @@ public class ApplicantUI {
         }
     }    	
     
-    protected void submitEnquiry() {
-        scanner.nextLine(); // consume leftover newline
+    protected void submitEnquiry() {   
+        System.out.println("==========Submit an Enquiry==========");
+        //get list of projects available
+        List<Project> availableProjects = projectManager.getProjects();
         
-        System.out.print("Enter the project name for your enquiry: ");
-        String projectName = scanner.nextLine();
+        if (availableProjects.isEmpty()) {
+        	System.out.println("There are no projects available at the moment.");
+        	System.out.println();
+        	return;
+        }
+        
+        System.out.println("Select the project you want to submit and enquiry: (Press 0 to exit)");
+        for (int i = 0; i < availableProjects.size(); i++) {
+            System.out.println((i + 1) + ". " + availableProjects.get(i).getName());
+        }
+        
+        System.out.print("Project choice: ");
+        int projectChoice = scanner.nextInt();
+        
+        if (projectChoice == 0) {
+            System.out.println("Enquiry submission cancelled.");
+            System.out.println();
+            return;
+        }
+        
+        if (projectChoice < 1 || projectChoice > availableProjects.size()) {
+            System.out.println("Invalid selection.");
+            System.out.println();
+            return;
+        }
+        
+        Project chosenProject = availableProjects.get(projectChoice - 1);
             	
     	System.out.println("Enter your enquiry: ");
-    	String message = scanner.nextLine();
+    	String message = scanner.next();
     	
-        Enquiry e = new Enquiry(applicant.getNRIC(), applicant.getName(), projectName, message);
+        Enquiry e = new Enquiry(applicant.getNRIC(), applicant.getName(), chosenProject.getName(), message);
         enquiryManager.submitEnquiry(e);
         System.out.println("Enquiry submitted successfully!");
+        System.out.println();
     }
     
     protected void editEnquiry() {
@@ -266,46 +317,53 @@ public class ApplicantUI {
     	
     	if(myEnquiries.isEmpty()) {
     		System.out.println("You have no enquiries.");
-    		System.out.println("----------------------");
+    		System.out.println("----------------------------------------");
     		return;
     	}
         System.out.println("Your Enquiries:");
-        System.out.println("-----------------------------------");
+        System.out.println("----------------------------------------");
         for (int i = 0; i < myEnquiries.size(); i++) {
             // Display using the applicant-friendly view (hides NRIC)
             System.out.println((i + 1) + ". " + myEnquiries.get(i).toStringForApplicant());
-            System.out.println("-----------------------------------");
+            System.out.println("----------------------------------------");
         }
         
     	System.out.print("Choose an enquiry to edit/delete (press 0 to exit): ");
-        int index = scanner.nextInt() - 1;
+        int index = scanner.nextInt();
+        scanner.nextLine();
         
-        if (index < 0 || index >= myEnquiries.size()) {
-            System.out.println("Request Cancelled. Redirecting to Main Page...");
+        if (index == 0) {
+        	System.out.println("Request Cancelled. Redirecting to Main Page...");
+        	System.out.println();
+        	return;
+        }
+        
+        if (index < 0 || index > myEnquiries.size()) {
+            System.out.println("Invalid option. Redirecting to Main Page...");
             System.out.println();
             return;
         }
         
+        Enquiry selected = myEnquiries.get(index - 1);
+        
+        System.out.println("Would you like to Edit or Delete the enquiry?");
         System.out.println("1. Edit Message");
         System.out.println("2. Delete Enquiry");
         int action = scanner.nextInt();
         scanner.nextLine(); // consume newline
         
+        
         switch (action) {
         //have to edit such that it shows a change in the csv
             case 1:
-                System.out.print("Enter new message: ");
+                System.out.print("Enter new enquiry message: ");
                 String newMessage = scanner.nextLine();
-                // For simplicity, we create a new enquiry record with the updated message and replace the old one
-                Enquiry updated = new Enquiry(applicant.getNRIC(), applicant.getName(),
-                                              myEnquiries.get(index).getProjectName(), newMessage);
-                enquiryManager.submitEnquiry(updated);
-                enquiryManager.getAllEnquiries().remove(myEnquiries.get(index));
+                enquiryManager.updateEnquiryMessage(selected, newMessage);
                 System.out.println("Enquiry updated.");
                 System.out.println();
                 break;
             case 2:
-                enquiryManager.getAllEnquiries().remove(myEnquiries.get(index));
+                enquiryManager.deleteEnquiry(selected);
                 System.out.println("Enquiry deleted.");
                 System.out.println();
                 break;
@@ -316,12 +374,20 @@ public class ApplicantUI {
     }    
     
     private void viewApplicantProfile() {
-        System.out.println("==== Applicant Profile ====");
-        System.out.println("Name: " + applicant.getName());
-        System.out.println("NRIC: " + applicant.getNRIC());
-        System.out.println("Age: " + applicant.getAge());
-        System.out.println("Marital Status: " + (applicant.isMarried() ? "Married" : "Single"));
-        System.out.println();
+    	//added security - user inputs password before seeing personal details
+    	System.out.println("Please enter your password to view your profile details: ");
+    	String autpassword = scanner.next();
+    	if (autpassword.equals(applicant.getPassword())){ 
+	        System.out.println("==== Applicant Profile ====");
+	        System.out.println("Name: " + applicant.getName());
+	        System.out.println("NRIC: " + applicant.getNRIC());
+	        System.out.println("Age: " + applicant.getAge());
+	        System.out.println("Marital Status: " + (applicant.isMarried() ? "Married" : "Single"));
+	        System.out.println();
+    	}else {
+    		System.out.println("Wrong password!");
+    	}
+    	System.out.println();
     }
 }
 
