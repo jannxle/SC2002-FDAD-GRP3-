@@ -175,6 +175,7 @@ public class HDBOfficerUI extends ApplicantUI {
         Project project = officer.getRegisteredProject(); // Use registered project, not applicant's applied project.
         if (project == null || officer.getRegistrationStatus() != OfficerRegistrationStatus.SUCCESSFUL) {
             System.out.println("No project assigned to you.");
+            System.out.println();
         } else {
             System.out.println("===========Project Details===========");
             System.out.println(project);
