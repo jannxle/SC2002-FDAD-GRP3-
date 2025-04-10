@@ -37,6 +37,10 @@ public class Enquiry {
         return reply;
     }
 
+    public void setMessage(String message) {
+        this.message = message;
+    }
+
     public void setReply(String reply) {
         this.reply = reply;
     }

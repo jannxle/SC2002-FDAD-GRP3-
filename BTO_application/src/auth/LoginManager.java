@@ -5,127 +5,176 @@ import java.util.Scanner;
 import boundary.ApplicantUI;
 import boundary.HDBManagerUI;
 import boundary.HDBOfficerUI;
+
 import control.UserManager;
 import control.ApplicantManager;
 import control.ApplicationManager;
+import control.BookingManager;
 import control.EnquiryManager;
 import control.OfficerRegistrationManager;
 import control.ProjectManager;
+import control.ReportManager;
+
 import entities.*;
 
 
 public class LoginManager {
-	private ApplicantManager applicantManager;
-	private ApplicationManager applicationManager;
-	private UserManager userManager;
-	private EnquiryManager enquiryManager;
-	private ProjectManager projectManager;
-	private OfficerRegistrationManager officerRegistrationManager;
-	
-	public LoginManager(ApplicantManager applicantManager, UserManager userManager, EnquiryManager enquiryManager, ApplicationManager applicationManager, ProjectManager projectManager, OfficerRegistrationManager officerRegistrationManager) {
+	private final ApplicantManager applicantManager;
+	private final ApplicationManager applicationManager;
+	private final UserManager<Applicant> applicantUserManager;
+	private final UserManager<Officer> officerUserManager;
+	private final UserManager<Manager> managerUserManager;
+	private final EnquiryManager enquiryManager;
+	private final ProjectManager projectManager;
+	private final OfficerRegistrationManager officerRegistrationManager;
+    private final BookingManager bookingManager;
+    private final ReportManager reportManager;
+
+	public LoginManager(ApplicantManager applicantManager,
+                        UserManager<Applicant> applicantUserManager,
+                        UserManager<Officer> officerUserManager,
+                        UserManager<Manager> managerUserManager,
+                        EnquiryManager enquiryManager,
+                        ApplicationManager applicationManager,
+                        ProjectManager projectManager,
+                        OfficerRegistrationManager officerRegistrationManager,
+                        BookingManager bookingManager,
+                        ReportManager reportManager
+                        ) {
 		this.applicantManager = applicantManager;
-		this.userManager = userManager;
+		this.applicantUserManager = applicantUserManager;
+		this.officerUserManager = officerUserManager;
+		this.managerUserManager = managerUserManager;
 		this.enquiryManager = enquiryManager;
 		this.applicationManager = applicationManager;
 		this.projectManager = projectManager;
+        this.officerRegistrationManager = officerRegistrationManager;
+        this.bookingManager = bookingManager;
+        this.reportManager = reportManager;
 	}
-	
-	/**
-     * Validates NRIC format.
-     * NRIC must start with S or T, followed by 7 digits and ending with a letter.
-     *
-     * @param nric The NRIC string to validate.
-     * @return true if valid, false otherwise.
-     */
+
     private boolean isValidNRIC(String nric) {
+        if (nric == null) return false;
         return nric.matches("^[ST]\\d{7}[A-Za-z]$");
     }
-	
+
 	public void login() {
 		Scanner scanner = new Scanner(System.in);
 		boolean loggedIn = false;
-		
+        User authenticatedUser = null;
+
 		while (!loggedIn) {
-			System.out.println("----BTO Management System Login Page----");
+			System.out.println("\n---- BTO Management System Login ----");
 			System.out.print("Enter NRIC: ");
-			// make sure input matches NRIC format
-			String NRIC = scanner.nextLine().trim().toUpperCase();
-			
-			//Validate NRIC format
-			if(!isValidNRIC(NRIC)) {
-				System.out.println("Invalid NRIC format. Please try again.");
-				System.out.println();
-				continue; //reset to login inputs
+			String inputNRIC = scanner.nextLine().trim().toUpperCase();
+
+			if(!isValidNRIC(inputNRIC)) {
+				System.out.println("Invalid NRIC format. Please try again (e.g., S1234567A).");
+				continue;
 			}
-			
+
 			System.out.print("Enter Password: ");
-			String password = scanner.nextLine();
+			String inputPassword = scanner.nextLine();
 			System.out.println();
+
+			authenticatedUser = null;
 			boolean found = false;
-			
-			//Check Applicants
-			for(Applicant a:userManager.getApplicants()) {    //iterates through all applicants in system
-				// checks if NRIC and password entered by individual matches the current applicant
-				if(a.getNRIC().equalsIgnoreCase(NRIC)&& a.verifyPassword(password)) {
-					System.out.println("Welcome "+a.getName() + "!");
-					System.out.println("Signed in as Applicant.");
-					System.out.println();
-					
-					//creates new object and passes an Applicant to it
-					//calls constructor of Applicant UI
-					ApplicantUI applicantUI = new ApplicantUI(a, applicantManager, userManager, this, enquiryManager, applicationManager);
-					applicantUI.showMenu();
+
+			for(Applicant a : applicantUserManager.getUsers()) {
+				if(a.getNRIC().equalsIgnoreCase(inputNRIC) && a.verifyPassword(inputPassword)) {
+                    authenticatedUser = a;
 					found = true;
-					loggedIn = true;
 					break;
 				}
 			}
-			
-			if(found) {
-				break;
+
+			if(!found) {
+                for(Officer o: officerUserManager.getUsers()){
+                    if (o.getNRIC().equalsIgnoreCase(inputNRIC) && o.verifyPassword(inputPassword)) {
+                        authenticatedUser = o;
+                        found = true;
+                        break;
+                    }
+                }
 			}
-			
-			//Check Officers
-			for(Officer o: userManager.getOfficers()){
-				if (o.getNRIC().equalsIgnoreCase(NRIC) && o.verifyPassword(password)) {
-					System.out.println("Welcome " + o.getName() + "!");
-					System.out.println("Signed in as HDB Officer.");
-					System.out.println();
-					HDBOfficerUI officerUI = new HDBOfficerUI(o, applicantManager, userManager, this, enquiryManager, applicationManager, projectManager, officerRegistrationManager);
-					officerUI.showMenu();
-					found = true;
-					loggedIn = true;
-					break;
-				}
+
+			if(!found) {
+                for(Manager m: managerUserManager.getUsers()){
+                    if (m.getNRIC().equalsIgnoreCase(inputNRIC) && m.verifyPassword(inputPassword)) {
+                         authenticatedUser = m;
+                         found = true;
+                         break;
+                    }
+                }
 			}
-			
-			if(found) {
-				break;
+
+			// Process Login Result
+			if (found && authenticatedUser != null) {
+                loggedIn = true;
+                System.out.println("Login Successful!");
+                System.out.println("Welcome " + authenticatedUser.getName() + "!");
+
+                // Launch the appropriate UI based on the user's Role or Type
+                if (authenticatedUser instanceof Applicant) {
+                    System.out.println("Signed in as Applicant.");
+                    System.out.println();
+                    ApplicantUI applicantUI = new ApplicantUI(
+                        (Applicant) authenticatedUser,
+                        applicantManager,
+                        applicantUserManager,
+                        this,
+                        enquiryManager,
+                        applicationManager,
+                        projectManager
+                    );
+                    applicantUI.showMenu();
+                } else if (authenticatedUser instanceof Officer) {
+                     System.out.println("Signed in as HDB Officer.");
+                     System.out.println();
+                     HDBOfficerUI officerUI = new HDBOfficerUI(
+                         (Officer) authenticatedUser,
+                         applicantManager,
+                         applicantUserManager,
+                         officerUserManager,
+                         this,
+                         enquiryManager,
+                         applicationManager,
+                         projectManager,
+                         officerRegistrationManager,
+                         bookingManager
+                      );
+                     officerUI.showMenu();
+                } else if (authenticatedUser instanceof Manager) {
+                     System.out.println("Signed in as HDB Manager.");
+                     System.out.println();
+                     HDBManagerUI managerUI = new HDBManagerUI(
+                         (Manager) authenticatedUser,
+                         projectManager,
+                         applicationManager,
+                         officerRegistrationManager,
+                         enquiryManager,
+                         reportManager,
+                         applicantUserManager,
+                         officerUserManager,
+                         managerUserManager,
+                         this
+                     );
+                     managerUI.showMenu();
+                } else {
+                     System.err.println("Error: Authenticated user type unknown.");
+                }
+
+			} else {
+				System.out.println("Login Unsuccessful. Invalid NRIC or Password.");
 			}
-			
-			//check for Manager
-			for(Manager m: userManager.getManagers()){
-				if (m.getNRIC().equalsIgnoreCase(NRIC) && m.verifyPassword(password)) {
-					System.out.println("Welcome " + m.getName() + "!");
-					System.out.println("Signed in as HDB Manager.");
-					System.out.println();
-					HDBManagerUI managerUI = new HDBManagerUI(m);
-					managerUI.showMenu();
-					found = true;
-					loggedIn = true;
-					break;
-				}
-			}
-			
-			if(found) {
-				break;
-			}
-		
-			//if NRIC or password no match
-			if (!found) {
-				System.out.println("Unsuccessful Login. Invalid NRIC or Password.");
-			}
-			
 		}
 	}
+
+    public void logout(User user) {
+         if (user != null) {
+             System.out.println("\nLogging out " + user.getName() + "...");
+         } else {
+             System.out.println("\nLogging out...");
+         }
+    }
 }
