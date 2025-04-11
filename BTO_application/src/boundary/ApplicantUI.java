@@ -81,12 +81,14 @@ public class ApplicantUI {
 				break;
 			case 3:
 				applyForProject();
+				applicationManager.saveApplications("data/Applications.csv", userManager.getApplicants());
 				break;
 			case 4:
 				viewApplicationStatus();
 				break;
 			case 5:
 				requestWithdrawal();
+				applicationManager.saveApplications("data/Applications.csv", userManager.getApplicants());
 				break;
 			case 6:
 				System.out.println();
@@ -251,19 +253,19 @@ public class ApplicantUI {
             System.out.println("No application to withdraw from.");
             return;
         }
-        scanner.nextLine(); // consume newline
         System.out.print("Are you sure you want to withdraw your application? (Y/N): ");
-        String response = scanner.nextLine();
+        String response = scanner.next();
         if (response.equalsIgnoreCase("Y")) {
+        	System.out.println();
             if (applicationManager.withdraw(applicant)) {
-                System.out.println("Withdrawal successful.");
+                System.out.println("Requested for Withdrawal. HDB Manager will be looking into your request shortly.");
                 System.out.println();
-                applicationManager.saveApplications("data/applications.csv", userManager.getApplicants());
             } else {
-                System.out.println("Withdrawal failed.");
+                System.out.println("Request Withdrawal failed.");
                 System.out.println();
             }
         } else {
+        	System.out.println();
             System.out.println("Withdrawal cancelled.");
             System.out.println();
         }
@@ -359,12 +361,10 @@ public class ApplicantUI {
                 System.out.print("Enter new enquiry message: ");
                 String newMessage = scanner.nextLine();
                 enquiryManager.updateEnquiryMessage(selected, newMessage);
-                System.out.println("Enquiry updated.");
                 System.out.println();
                 break;
             case 2:
                 enquiryManager.deleteEnquiry(selected);
-                System.out.println("Enquiry deleted.");
                 System.out.println();
                 break;
             default:

@@ -47,9 +47,8 @@ public class ApplicationManager {
 			System.out.println("You have no Applications to withdraw from");
 			return false;
 		}
-		applicant.setAppliedProject(null);
-		applicant.setRoomChosen(null);
-		applicant.setStatus(null);
+		applicant.setStatus(ApplicationStatus.PENDING_WITHDRAWAL);
+		System.out.println("Application status updated to PENDING_WITHDRAWAL.");
 		return true;
 	}
 	
@@ -93,16 +92,27 @@ public class ApplicationManager {
         
         for (Applicant a : applicants) {
             if (a.getAppliedProject() != null) { // Only save if an application exists
-                String line = a.getNRIC() + "," +
-                              a.getName() + "," +
-                              a.getAppliedProject().getName() + "," +
-                              a.getRoomChosen() + "," +
-                              (a.getStatus() != null ? a.getStatus() : "");
+                String nric = a.getNRIC();
+                String name = a.getName();
+                String projectName = a.getAppliedProject().getName();
+                RoomType roomType = a.getRoomChosen();
+                
+                // If ApplicationStatus is an enum, convert it to a string:
+                String statusStr = (a.getStatus() != null) ? a.getStatus().name() : "";
+
+                // Build the CSV line.
+                String line = nric + "," +
+                              name + "," +
+                              projectName + "," +
+                              roomType + "," +
+                              statusStr;
+                
                 lines.add(line);
             }
         }
         FileManager.writeFile(filePath, lines);
     }
+    
     public void loadApplications(String filePath, List<Applicant> applicants, List<Project> projects) {
         List<String> lines = FileManager.readFile(filePath);
         if (lines == null || lines.size() <= 1) {

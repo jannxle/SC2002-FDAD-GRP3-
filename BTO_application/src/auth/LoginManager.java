@@ -109,7 +109,7 @@ public class LoginManager {
 					System.out.println("Welcome " + m.getName() + "!");
 					System.out.println("Signed in as HDB Manager.");
 					System.out.println();
-					HDBManagerUI managerUI = new HDBManagerUI(m);
+					HDBManagerUI managerUI = new HDBManagerUI(m, projectManager, enquiryManager, applicationManager, userManager, this);
 					managerUI.showMenu();
 					found = true;
 					loggedIn = true;

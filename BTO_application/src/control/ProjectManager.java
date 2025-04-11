@@ -5,6 +5,8 @@ import entities.Project;
 import entities.Room;
 import enums.RoomType;
 import utils.FileManager;
+
+import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -242,6 +244,7 @@ public class ProjectManager {
             }
         }
     }
+    
     
     /**
      * Helper method to convert a Project object into a CSV-formatted string.

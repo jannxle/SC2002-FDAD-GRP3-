@@ -36,11 +36,23 @@ public class EnquiryManager {
     }
     
     public void updateEnquiryMessage(Enquiry enquiry, String newMessage) {
+    	//disallow editing if reply exits
+    	if (enquiry.getReply() != null && !enquiry.getReply().trim().isEmpty()) {
+    		System.out.println("This enquiry has already been replied to and cannot be edited.");
+    		return;
+    	}
     	enquiry.setMessage(newMessage);
+        System.out.println("Enquiry updated.");
     }
     
     public void deleteEnquiry(Enquiry enquiry) {
+    	//disallow deletion of enquiry if reply exist
+    	if (enquiry.getReply() != null && !enquiry.getReply().trim().isEmpty()) {
+    		System.out.println("This enquiry has already been replied to and cannot be deleted.");
+    		return;
+    	}
     	allEnquiries.remove(enquiry);
+    	System.out.println("Enquiry deleted.");
     }
 
     public void replyToEnquiry(Enquiry enquiry, String reply, String officerName) {
