@@ -15,6 +15,7 @@ import control.BookingManager;
 
 import entities.Applicant;
 import entities.Enquiry;
+import entities.Manager;
 import entities.Officer;
 import entities.Project;
 import entities.Room;
@@ -128,6 +129,7 @@ public class HDBOfficerUI extends ApplicantUI {
                     break;
                 case 11:
                     viewAndReplyToProjectEnquiries();
+                    enquiryManager.saveEnquiries("data/enquiries.csv");
                     break;
                 case 12:
                     bookFlatForApplicant();
@@ -311,7 +313,8 @@ public class HDBOfficerUI extends ApplicantUI {
         System.out.print("Enter your reply: ");
         String reply = scanner.nextLine();
 
-		enquiryManager.replyToEnquiry(selectedEnquiry, reply);
+		enquiryManager.replyToEnquiry(selectedEnquiry, reply, officer.getName());
+		selectedEnquiry.setReply(reply, officer.getName());
         enquiryManager.saveEnquiries();
 
         System.out.println("Reply submitted successfully for Enquiry #" + selection);

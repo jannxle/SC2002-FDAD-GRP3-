@@ -80,23 +80,13 @@ public class LoginManager {
 			authenticatedUser = null;
 			boolean found = false;
 
-			for(Applicant a : applicantUserManager.getUsers()) {
-				if(a.getNRIC().equalsIgnoreCase(inputNRIC) && a.verifyPassword(inputPassword)) {
-                    authenticatedUser = a;
-					found = true;
-					break;
-				}
-			}
-
-			if(!found) {
-                for(Officer o: officerUserManager.getUsers()){
-                    if (o.getNRIC().equalsIgnoreCase(inputNRIC) && o.verifyPassword(inputPassword)) {
-                        authenticatedUser = o;
-                        found = true;
-                        break;
-                    }
+            for(Officer o: officerUserManager.getUsers()){
+                if (o.getNRIC().equalsIgnoreCase(inputNRIC) && o.verifyPassword(inputPassword)) {
+                    authenticatedUser = o;
+                    found = true;
+                    break;
                 }
-			}
+            }			
 
 			if(!found) {
                 for(Manager m: managerUserManager.getUsers()){
@@ -108,6 +98,16 @@ public class LoginManager {
                 }
 			}
 
+			if(!found) {
+				for(Applicant a : applicantUserManager.getUsers()) {
+					if(a.getNRIC().equalsIgnoreCase(inputNRIC) && a.verifyPassword(inputPassword)) {
+	                    authenticatedUser = a;
+						found = true;
+						break;
+					}
+				}
+			}
+
 			// Process Login Result
 			if (found && authenticatedUser != null) {
                 loggedIn = true;
@@ -115,7 +115,24 @@ public class LoginManager {
                 System.out.println("Welcome " + authenticatedUser.getName() + "!");
 
                 // Launch the appropriate UI based on the user's Role or Type
-                if (authenticatedUser instanceof Applicant) {
+                if (authenticatedUser instanceof Officer) {
+                    System.out.println("Signed in as HDB Officer.");
+                    System.out.println();
+                    HDBOfficerUI officerUI = new HDBOfficerUI(
+                        (Officer) authenticatedUser,
+                        applicantManager,
+                        applicantUserManager,
+                        officerUserManager,
+                        this,
+                        enquiryManager,
+                        applicationManager,
+                        projectManager,
+                        officerRegistrationManager,
+                        bookingManager
+                     );
+                    officerUI.showMenu();
+
+                } else if (authenticatedUser instanceof Applicant) {
                     System.out.println("Signed in as Applicant.");
                     System.out.println();
                     ApplicantUI applicantUI = new ApplicantUI(
@@ -128,22 +145,7 @@ public class LoginManager {
                         projectManager
                     );
                     applicantUI.showMenu();
-                } else if (authenticatedUser instanceof Officer) {
-                     System.out.println("Signed in as HDB Officer.");
-                     System.out.println();
-                     HDBOfficerUI officerUI = new HDBOfficerUI(
-                         (Officer) authenticatedUser,
-                         applicantManager,
-                         applicantUserManager,
-                         officerUserManager,
-                         this,
-                         enquiryManager,
-                         applicationManager,
-                         projectManager,
-                         officerRegistrationManager,
-                         bookingManager
-                      );
-                     officerUI.showMenu();
+
                 } else if (authenticatedUser instanceof Manager) {
                      System.out.println("Signed in as HDB Manager.");
                      System.out.println();
@@ -176,5 +178,6 @@ public class LoginManager {
          } else {
              System.out.println("\nLogging out...");
          }
+         login();
     }
 }

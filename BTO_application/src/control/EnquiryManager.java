@@ -27,7 +27,7 @@ public class EnquiryManager {
         for (String line : lines.subList(1, lines.size())) {
             try {
                  // Let's assume the simple comma split
-                String[] parts = line.split(",", 5);
+                String[] parts = line.split(",", 6);
                 if (parts.length >= 4) { // Need at least NRIC, Name, Project, Message
                     String nr = parts[0].trim();
                     String name = parts[1].trim();
@@ -35,9 +35,11 @@ public class EnquiryManager {
                     String message = unescapeCsvField(parts[3].trim());
                     // Reply might be missing if parts.length is 4, or empty if parts[4] exists but is empty/""
                     String reply = (parts.length == 5 && !unescapeCsvField(parts[4].trim()).isEmpty()) ? unescapeCsvField(parts[4].trim()) : null;
+                    String replyingOfficer = parts.length == 6 ? unescapeCsvField(parts[5].trim()) : null;
+
                     Enquiry e = new Enquiry(nr, name, project, message);
                     if (reply != null) {
-                         e.setReply(reply);
+                         e.setReply(reply, replyingOfficer);
                     }
                     allEnquiries.add(e);
                 } else {
@@ -57,14 +59,15 @@ public class EnquiryManager {
 
     public void saveEnquiries(String filePath) {
         List<String> lines = new ArrayList<>();
-        lines.add("applicantNRIC,applicantName,Project,Message,Reply");
+        lines.add("applicantNRIC,applicantName,Project,Message,Reply,ReplyingBy");
         for (Enquiry e : allEnquiries) {
             lines.add(String.join(",",
                 escapeCsvField(e.getApplicantNRIC()),
                 escapeCsvField(e.getApplicantName()),
                 escapeCsvField(e.getProjectName()),
                 escapeCsvField(e.getMessage()),
-                escapeCsvField(e.getReply() == null ? "" : e.getReply())
+                escapeCsvField(e.getReply() == null ? "" : e.getReply()),
+                escapeCsvField(e.getReplyingOfficer()== null ? "" : e.getReplyingOfficer())
             ));
         }
         FileManager.writeFile(filePath, lines);
@@ -74,7 +77,7 @@ public class EnquiryManager {
     public void submitEnquiry(Enquiry enquiry) {
         if (enquiry != null) {
              allEnquiries.add(enquiry);
-             System.out.println("Enquiry submitted to memory by " + enquiry.getApplicantNRIC() + " for project " + enquiry.getProjectName());
+             System.out.println("Enquiry submitted by " + enquiry.getApplicantNRIC() + " for project " + enquiry.getProjectName());
         } else {
             System.err.println("Cannot submit a null enquiry.");
         }
@@ -106,9 +109,9 @@ public class EnquiryManager {
         return projectEnquiries;
     }
 
-    public void replyToEnquiry(Enquiry enquiry, String reply) {
+    public void replyToEnquiry(Enquiry enquiry, String reply, String officerName) {
         if (enquiry != null) {
-            enquiry.setReply(reply);
+            enquiry.setReply(reply, officerName);
              System.out.println("Reply added to enquiry from " + enquiry.getApplicantNRIC() + " for project " + enquiry.getProjectName());
         } else {
              System.err.println("Cannot reply to a null enquiry.");

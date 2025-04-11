@@ -95,7 +95,10 @@ public class HDBManagerUI {
                 case 5: manageBTOApplications(); break;
                 case 6: manageApplicationWithdrawals(); break;
                 case 7: viewAllEnquiries(); break;
-                case 8: replyToMyProjectEnquiries(); break;
+                case 8: 
+                	replyToMyProjectEnquiries();
+                	enquiryManager.saveEnquiries("data/enquiries.csv");
+                	break;
                 case 9: generateBookingReport(); break;
                 case 10: changePassword(); break;
                 case 11: viewManagerProfile(); break;
@@ -620,7 +623,8 @@ public class HDBManagerUI {
          System.out.print("Enter your reply: ");
          String reply = scanner.nextLine();
 
-         enquiryManager.replyToEnquiry(enquiryToReply, reply);
+         enquiryManager.replyToEnquiry(enquiryToReply, reply, manager.getName());
+         enquiryToReply.setReply(reply, manager.getName());
          enquiryManager.saveEnquiries();
          System.out.println("Reply submitted successfully.");
 

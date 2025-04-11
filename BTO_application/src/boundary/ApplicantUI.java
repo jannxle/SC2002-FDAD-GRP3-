@@ -84,11 +84,20 @@ public class ApplicantUI {
             switch (choice) {
                 case 1: changePassword(); break;
                 case 2: viewAvailableProjects(); break;
-                case 3: applyForProject(); break;
+                case 3: 
+                	applyForProject(); 
+                	applicationManager.saveApplications("data/Applications.csv", applicantUserManager.getUsers());
+                	break;
                 case 4: viewApplicationStatus(); break;
                 case 5: withdrawApplication(); break;
-                case 6: submitEnquiry(); break;
-                case 7: viewEditDeleteMyEnquiries(); break;
+                case 6: 
+                	submitEnquiry(); 
+	                enquiryManager.saveEnquiries("data/enquiries.csv");
+	                break;
+                case 7: 
+                	viewEditDeleteMyEnquiries(); 
+                	enquiryManager.saveEnquiries("data/enquiries.csv");
+                	break;
                 case 8: viewApplicantProfile(); break;
                 case 9: logout = true; loginManager.logout(this.applicant); break;
                 default: System.out.println("Invalid option. Please try again.");
@@ -269,14 +278,15 @@ public class ApplicantUI {
          ApplicationStatus status = applicantForStatus.getStatus();
 
          if (appliedProject != null && status != null && status != ApplicationStatus.UNSUCCESSFUL) {
-             System.out.println(" Current Application Details:");
-             System.out.println("  Project:     " + appliedProject.getName());
-             System.out.println("  Chosen Room: " + (applicantForStatus.getRoomChosen() != null ? applicantForStatus.getRoomChosen() : "N/A"));
-             System.out.println("  Status:      " + status);
+        	 System.out.println("---------------------------------------");
+             System.out.println("Current Application Details:");
+             System.out.println("Project:     " + appliedProject.getName());
+             System.out.println("Chosen Room: " + (applicantForStatus.getRoomChosen() != null ? applicantForStatus.getRoomChosen() : "N/A"));
+             System.out.println("Status:      " + status);
              switch (status) {
-                 case PENDING: System.out.println("   > Your application is pending review by HDB."); break;
-                 case SUCCESSFUL: System.out.println("   > Congratulations! Your application is successful.\n     Please contact an HDB Officer to book your flat."); break;
-                 case BOOKED: System.out.println("   > You have successfully booked a flat for this application."); break;
+                 case PENDING: System.out.println(">>> Your application is pending review by HDB."); break;
+                 case SUCCESSFUL: System.out.println(">>> Congratulations! Your application is successful.\n     Please contact an HDB Officer to book your flat."); break;
+                 case BOOKED: System.out.println(">>> You have successfully booked a flat for this application."); break;
                  default: break;
              }
          } else if (status == ApplicationStatus.UNSUCCESSFUL) {
@@ -310,10 +320,10 @@ public class ApplicantUI {
             System.out.println("Withdrawal from a SUCCESSFUL or BOOKED application typically requires HDB Manager approval.");
             System.out.println("Proceeding here assumes necessary coordination has occurred or will occur.");
         }
-        System.out.print("Are you sure you want to withdraw? (yes/no): ");
+        System.out.print("Are you sure you want to withdraw? (Y/N): ");
         String confirmation = scanner.nextLine().trim().toLowerCase();
 
-        if (confirmation.equals("yes")) {
+        if (confirmation.equals("Y")) {
             boolean success = applicationManager.withdrawApplication(this.applicant);
             if (success) {
                  System.out.println("Withdrawal processed. Your application status is now UNSUCCESSFUL.");
@@ -326,29 +336,39 @@ public class ApplicantUI {
     }
 
     protected void submitEnquiry() {
-        System.out.println("--- Submit Enquiry ---");
-        System.out.print("Enter the exact name of the project the enquiry is about: ");
-        String projectName = scanner.nextLine().trim();
-
-        if (this.projectManager.findProjectByName(projectName) == null) {
-             System.out.println("Project '" + projectName + "' not found. Cannot submit enquiry.");
-             return;
+        System.out.println("========Submit Enquiry========");
+        
+        List<Project> allProjects = projectManager.getProjects();
+        if (allProjects == null || allProjects.isEmpty()) {
+        	System.out.println("There are no projects available for you to submit an enquiry.");
+        	return;
         }
+        
+        System.out.println("Available Projects:");
+        for (int i = 0; i < allProjects.size(); i++) {
+            System.out.printf(" %d. %s (%s)\n", i + 1, allProjects.get(i).getName(), allProjects.get(i).getNeighbourhood());
+        }
+        System.out.println("-------------------------------");
+        System.out.print("Select the project you want to enquiry about (Enter 0 to exit): ");
+        int projectChoice = scanner.nextInt();
 
-        System.out.print("Enter your enquiry message: ");
-        String message = scanner.nextLine().trim();
-
-        if (message.isEmpty()) {
-            System.out.println("Enquiry message cannot be empty. Submission cancelled.");
+        if (projectChoice < 1 || projectChoice > allProjects.size()) {
+            System.out.println("Invalid selection.");
+            System.out.println();
             return;
         }
-
-        Enquiry newEnquiry = new Enquiry(applicant.getNRIC(), applicant.getName(), projectName, message);
-        enquiryManager.submitEnquiry(newEnquiry);
-        enquiryManager.saveEnquiries(); 
- 
-        System.out.println("Enquiry submitted successfully.");
+       
+        Project chosenProject = allProjects.get(projectChoice - 1);
+            	
+    	System.out.println("Enter your enquiry: ");
+    	String message = scanner.next();
+    	
+        Enquiry e = new Enquiry(applicant.getNRIC(), applicant.getName(), chosenProject.getName(), message);
+        enquiryManager.submitEnquiry(e);
+        System.out.println("Enquiry submitted successfully!");
+        System.out.println();
     }
+ 
 
     protected void viewEditDeleteMyEnquiries() {
         System.out.println("--- View/Edit/Delete My Enquiries ---");
