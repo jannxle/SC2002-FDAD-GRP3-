@@ -62,10 +62,10 @@ public class HDBOfficerUI extends ApplicantUI {
         boolean logout = false;
 
         while (!logout) {
-            System.out.println("\n=========== HDB Officer Dashboard ===========");
+            System.out.println("\n============ HDB Officer Dashboard ============");
             System.out.println(" User: " + officer.getName() + " (" + officer.getNRIC() + ")");
-            System.out.println("-------------------------------------------");
-            System.out.println("--- Applicant Actions (As Officer) ---");
+            System.out.println("------------------------------------------------");
+            System.out.println("-------- Applicant Actions (As Officer) --------");
             System.out.println(" 1. Change Password");
             System.out.println(" 2. View Available Projects (as Applicant)");
             System.out.println(" 3. Apply for a Project (as Applicant)");
@@ -82,7 +82,7 @@ public class HDBOfficerUI extends ApplicantUI {
             System.out.println("13. Generate Booking Receipt for Applicant");
             System.out.println("14. View My Profile");
             System.out.println("15. Logout");
-            System.out.println("===========================================");
+            System.out.println("================================================");
             System.out.print("Enter your choice: ");
 
             int choice = -1;
