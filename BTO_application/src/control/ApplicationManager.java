@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.NoSuchElementException;
 
 import entities.Applicant;
+import entities.Officer;
 import entities.Project;
 import entities.Room;
 import enums.RoomType;
@@ -19,15 +20,24 @@ public class ApplicationManager {
     private static final String APPLICATIONS_FILE_PATH = "data/Applications.csv";
     private final ProjectManager projectManager;
     private final UserManager<Applicant> applicantUserManager;
+    private UserManager<Officer> officerUserManager;
 
-    public ApplicationManager(ProjectManager projectManager, UserManager<Applicant> applicantUserManager) {
+    public ApplicationManager(ProjectManager projectManager, UserManager<Applicant> applicantUserManager, UserManager<Officer> officerUserManager) {
         if (projectManager == null || applicantUserManager == null) {
              throw new IllegalArgumentException("ProjectManager and ApplicantUserManager cannot be null.");
         }
         this.projectManager = projectManager;
         this.applicantUserManager = applicantUserManager;
+        this.officerUserManager = officerUserManager;
     }
 
+    public List<Applicant> getAllApplicants() {
+        List<Applicant> all = new ArrayList<>();
+        all.addAll(applicantUserManager.getUsers());
+        all.addAll(officerUserManager.getUsers());
+        return all;
+    }
+    
     public boolean apply(Applicant applicant, Project project, RoomType chosenRoom) {
         if (applicant == null || project == null || chosenRoom == null) {
              System.err.println("Application failed: Applicant, project, or chosen room cannot be null.");
@@ -93,31 +103,28 @@ public class ApplicationManager {
             // If status was BOOKED, increment room availability first
             if (currentStatus == ApplicationStatus.BOOKED) { //
                 if (currentProject == null || currentRoom == null) {
-                    System.err.println("Withdrawal Error: Cannot process withdrawal from BOOKED status. Applicant is missing project or room details.");
+                    System.err.println("Withdrawal Error: Cannot process withdrawal from BOOKED status.");
                     return false;
-                }
-                // Increment room count via ProjectManager
-                boolean availabilityUpdated = projectManager.updateRoomAvailability(currentProject, currentRoom, +1);
-                if (!availabilityUpdated) {
-                    System.err.println("Withdrawal Warning: Failed to increment room availability count for " + currentRoom + " in project " + currentProject.getName() + ".");
-                } else {
-                    projectManager.saveProjects("data/ProjectList.csv"); //
                 }
             }
 
             // Set status to UNSUCCESSFUL and clear details
-            applicant.setStatus(ApplicationStatus.UNSUCCESSFUL); //
-            applicant.setAppliedProject(null); //
-            applicant.setRoomChosen(null); //
+            applicant.setStatus(ApplicationStatus.PENDING_WITHDRAWAL); //
+
+            // SAV
 
             // Trigger saving of the applicant's state
-            if (applicantUserManager != null) {
-                applicantUserManager.saveUsers();
+            if (applicant instanceof Officer) {
+				if (officerUserManager != null) {
+                    officerUserManager.saveUsers();
+                }
             } else {
-                System.err.println("Warning: ApplicantUserManager not set. Cannot save applicant state automatically after withdrawal.");
+                if (applicantUserManager != null) {
+                    applicantUserManager.saveUsers();
+                }
             }
 
-            System.out.println("Application for project '" + (currentProject != null ? currentProject.getName() : "Unknown") + "' withdrawn. Status set to UNSUCCESSFUL."); //
+            System.out.println("Application for project '" + (currentProject != null ? currentProject.getName() : "Unknown") + "' withdrawn. Status set to PENDING_WITHDRAWAL."); //
             return true;
 
         } else {
@@ -137,22 +144,13 @@ public class ApplicationManager {
 
          Project project = applicant.getAppliedProject();
          RoomType chosenRoom = applicant.getRoomChosen();
-         if (project != null && chosenRoom != null && projectManager != null) {
-              boolean available = false;
-              for(Room room : project.getRooms()) {
-                   if (room.getRoomType() == chosenRoom && room.getAvailableRooms() > 0) {
-                        available = true;
-                        break;
-                   }
-              }
-              if (!available) {
-                   System.err.println("Approval failed: No available units for " + chosenRoom + " in project '" + project.getName() + "'.");
-                   applicant.setStatus(ApplicationStatus.UNSUCCESSFUL);
-                   if (applicantUserManager != null) applicantUserManager.saveUsers();
-                   return false;
-              }
-         } else if (project == null || chosenRoom == null) {
+         if (project == null || chosenRoom == null) {
              System.err.println("Approval failed: Project or chosen room data missing for applicant.");
+             return false;
+         }
+         
+         if (project.getManager() == null || project.getManager().trim().isEmpty()) {
+             System.err.println("Approval failed: Project '" + project.getName() + "' does not have a manager assigned.");
              return false;
          }
 

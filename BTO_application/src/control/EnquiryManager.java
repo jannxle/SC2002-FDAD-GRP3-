@@ -34,8 +34,13 @@ public class EnquiryManager {
                     String project = parts[2].trim();
                     String message = unescapeCsvField(parts[3].trim());
                     // Reply might be missing if parts.length is 4, or empty if parts[4] exists but is empty/""
-                    String reply = (parts.length == 5 && !unescapeCsvField(parts[4].trim()).isEmpty()) ? unescapeCsvField(parts[4].trim()) : null;
-                    String replyingOfficer = parts.length == 6 ? unescapeCsvField(parts[5].trim()) : null;
+                    String reply = (parts.length >= 5 && !unescapeCsvField(parts[4].trim()).isEmpty()) 
+                    	    ? unescapeCsvField(parts[4].trim()) 
+                    	    : null;
+
+                    	String replyingOfficer = (parts.length >= 6 && !unescapeCsvField(parts[5].trim()).isEmpty()) 
+                    	    ? unescapeCsvField(parts[5].trim()) 
+                    	    : null;
 
                     Enquiry e = new Enquiry(nr, name, project, message);
                     if (reply != null) {

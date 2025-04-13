@@ -88,6 +88,14 @@ public class Project {
 		this.visibility = visibility;
 	}
 	
+	public void addOfficer(String name) {
+	    if (officer == null || officer.isEmpty()) {
+	        officer = name;
+	    } else if (!officer.contains(name)) {
+	        officer += ";" + name;
+	    }
+	}
+	
 	
     public static Project fromCSV(String csvLine) {
         // CSV format:
@@ -104,12 +112,12 @@ public class Project {
         String neighborhood = parts[1].trim();
         // parse room1
         String type1Str = parts[2].trim();
-        RoomType roomType1 = type1Str.equalsIgnoreCase("2-Room") ? RoomType.TwoRoom : RoomType.ThreeRoom;
+        RoomType roomType1 = type1Str.equalsIgnoreCase("TwoRoom") ? RoomType.TwoRoom : RoomType.ThreeRoom;
         int numUnitsType1 = Integer.parseInt(parts[3].trim());
         double priceType1 = Double.parseDouble(parts[4].trim());
         // parse room2
         String type2Str = parts[5].trim();
-        RoomType roomType2 = type2Str.equalsIgnoreCase("2-Room") ? RoomType.TwoRoom : RoomType.ThreeRoom;
+        RoomType roomType2 = type2Str.equalsIgnoreCase("TwoRoom") ? RoomType.TwoRoom : RoomType.ThreeRoom;
         int numUnitsType2 = Integer.parseInt(parts[6].trim());
         double priceType2 = Double.parseDouble(parts[7].trim());
         // parse dates

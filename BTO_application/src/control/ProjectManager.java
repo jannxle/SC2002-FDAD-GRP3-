@@ -80,7 +80,7 @@ public class ProjectManager {
 
     public void saveProjects(String filePath) {
         List<String> lines = new ArrayList<>();
-         lines.add("Project Name,Neighbourhood,Type 1,Num Units 1,Price 1,Type 2,Num Units 2,Price 2,Open Date,Close Date,Manager NRIC,Officer Slots,Officer Name,Visibility");
+         lines.add("Project Name,Neighbourhood,Type 1,Num Units 1,Price 1,Type 2,Num Units 2,Price 2,Open Date,Close Date,Manager Name,Officer Slots,Officer Name,Visibility");
         for (Project p : projects) {
             lines.add(toCSV(p));
         }
@@ -202,7 +202,7 @@ public class ProjectManager {
         String closeDateStr = p.getCloseDate() != null ? p.getCloseDate().format(DATE_FORMATTER) : "";
 
         // Get other fields, handling potential nulls
-        String managerNRIC = p.getManager() != null ? p.getManager() : "";
+        String managerName = p.getManager() != null ? p.getManager() : "";
         String officerName = p.getOfficer() != null ? p.getOfficer() : "";
         String visibility = String.valueOf(p.isVisibility());
 
@@ -213,7 +213,7 @@ public class ProjectManager {
                 escapeCsvField(type2), units2, price2,
                 escapeCsvField(openDateStr),
                 escapeCsvField(closeDateStr),
-                escapeCsvField(managerNRIC),
+                escapeCsvField(managerName),
                 String.valueOf(p.getOfficerSlot()),
                 escapeCsvField(officerName),
                 visibility

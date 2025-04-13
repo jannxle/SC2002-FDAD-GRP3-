@@ -55,26 +55,29 @@ public class HDBManagerUI {
     public void showMenu() {
         boolean logout = false;
         while (!logout) {
-            System.out.println("\n=========== HDB Manager Dashboard ===========");
+            System.out.println("\n============= HDB Manager Dashboard =============");
             System.out.println(" User: " + manager.getName() + " (" + manager.getNRIC() + ")");
-            System.out.println("-------------------------------------------");
-            System.out.println("--- Project Management ---");
+            System.out.println("--------------------------------------------------");
+            System.out.println("--------------- Project Management ---------------");
             System.out.println(" 1. Create New BTO Project Listing");
             System.out.println(" 2. View/Edit/Delete Project Listings");
             System.out.println(" 3. Toggle Project Visibility");
-            System.out.println("--- Registration & Application Management ---");
+            System.out.println();
+            System.out.println("------ Registration & Application Management ------");
             System.out.println(" 4. View/Approve/Reject Officer Registrations");
             System.out.println(" 5. View/Approve/Reject BTO Applications");
             System.out.println(" 6. Process Application Withdrawals");
-            System.out.println("--- Enquiries & Reports ---");
+            System.out.println();
+            System.out.println("--------------- Enquiries & Reports ---------------");
             System.out.println(" 7. View All Enquiries");
             System.out.println(" 8. Reply to Enquiries (for projects handled)");
             System.out.println(" 9. Generate Applicant Booking Report");
-            System.out.println("--- Account ---");
+            System.out.println();
+            System.out.println("--------------------- Account ---------------------");
             System.out.println("10. Change Password");
             System.out.println("11. View My Profile");
             System.out.println("12. Logout");
-            System.out.println("===========================================");
+            System.out.println("===================================================");
             System.out.print("Enter your choice: ");
 
             int choice = -1;
@@ -165,7 +168,7 @@ public class HDBManagerUI {
             }
 
             Project newProject = new Project(
-                name, neighbourhood, openDate, closeDate, this.manager.getNRIC(),
+                name, neighbourhood, openDate, closeDate, this.manager.getName(),
                 slots, rooms, false, null
             );
 
@@ -223,7 +226,7 @@ public class HDBManagerUI {
 
         List<Project> allProjects = projectManager.getProjects();
         for (Project p : allProjects) {
-            if (p.getManager() != null && p.getManager().equalsIgnoreCase(this.manager.getNRIC())) {
+            if (p.getManager() != null && p.getManager().equalsIgnoreCase(this.manager.getName())) {
                 LocalDate existingOpen = p.getOpenDate();
                 LocalDate existingClose = p.getCloseDate();
                 // Check overlap
@@ -251,7 +254,7 @@ public class HDBManagerUI {
         List<Project> projectsToDisplay;
         if (viewChoice == 2) {
             projectsToDisplay = projectManager.getProjects().stream()
-                                     .filter(p -> p.getManager() != null && p.getManager().equalsIgnoreCase(this.manager.getNRIC()))
+                                     .filter(p -> p.getManager() != null && p.getManager().equalsIgnoreCase(this.manager.getName()))
                                      .collect(Collectors.toList());
              System.out.println("\n--- Projects Managed By You ---");
         } else {
@@ -276,7 +279,7 @@ public class HDBManagerUI {
         if (projectToManage == null) { System.out.println("Project '" + projectName + "' not found."); return; }
 
         // Check ownership for Edit/Delete
-        if (projectToManage.getManager() == null || !projectToManage.getManager().equalsIgnoreCase(this.manager.getNRIC())) {
+        if (projectToManage.getManager() == null || !projectToManage.getManager().equalsIgnoreCase(this.manager.getName())) {
              System.out.println("You can only Edit or Delete projects created by you.");
              return;
         }
@@ -324,19 +327,98 @@ public class HDBManagerUI {
     }
 
     private void editProject(Project project) {
-        System.out.println("--- Edit Project: " + project.getName() + " ---");
-        System.out.println("Edit functionality needs further implementation based on specific editable fields.");
+        System.out.println("------ Edit Project: " + project.getName() + " ------");
+        System.out.println("Current project details:");
+        System.out.println("1. Neighbourhood: " + project.getNeighbourhood());
+        System.out.println("2. Open Date: " + (project.getOpenDate() != null ? 
+            project.getOpenDate().format(DateTimeFormatter.ofPattern("dd/MM/yy")) : "N/A"));
+        System.out.println("3. Close Date: " + (project.getCloseDate() != null ? 
+            project.getCloseDate().format(DateTimeFormatter.ofPattern("dd/MM/yy")) : "N/A"));
+        System.out.println("4. Officer Slots: " + project.getOfficerSlot());
+        System.out.println("-----------------------------");
+        System.out.print("Select field to edit (Press 0 to exit): ");
+        int field = -1;
+        try { field = scanner.nextInt(); } catch (InputMismatchException e) {}
+        scanner.nextLine();
+        
+        switch(field) {
+            case 1:
+                System.out.print("Enter new Neighbourhood: ");
+                String newNeighbourhood = scanner.nextLine().trim();
+                if (!newNeighbourhood.isEmpty()) {
+                    project.setNeighbourhood(newNeighbourhood);
+                    System.out.println("Neighbourhood updated.");
+                }
+                break;
+            case 2:
+                LocalDate newOpenDate = promptForDate("Enter new Open Date (dd/MM/yy): ");
+                if (newOpenDate != null) {
+                    project.setOpenDate(newOpenDate);
+                    System.out.println("Open Date updated.");
+                }
+                break;
+            case 3:
+                LocalDate newCloseDate = promptForDate("Enter new Close Date (dd/MM/yy): ");
+                if (newCloseDate != null) {
+                    project.setCloseDate(newCloseDate);
+                    System.out.println("Close Date updated.");
+                }
+                break;
+            case 4:
+                System.out.print("Enter new Officer Slots (0-10): ");
+                int newSlots = -1;
+                try { newSlots = scanner.nextInt(); } catch (InputMismatchException e) {}
+                scanner.nextLine();
+                
+                if (newSlots >= 0 && newSlots <= 10) {
+                    project.setOfficerSlot(newSlots);
+                    System.out.println("Officer Slots updated.");
+                } else {
+                    System.out.println("Invalid number of slots. Must be between 0 and 10.");
+                }
+                break;
+            case 0:
+                System.out.println("Edit cancelled.");
+                return;
+            default:
+                System.out.println("Invalid option.");
+                return;
+        }
+        
+        // Save changes
+        System.out.println();
+        projectManager.saveProjects("data/ProjectList.csv");
+        System.out.println("Project updated successfully.");
     }
 
     private void deleteProject(Project project) {
         System.out.println("--- Delete Project: " + project.getName() + " ---");
-        System.out.print("Are you sure you want to permanently delete project '" + project.getName() + "'? (yes/no): ");
-        String confirmation = scanner.nextLine().trim().toLowerCase();
-        if (confirmation.equals("yes")) {
-            if (projectManager.deleteProject(project.getName())) {
-                projectManager.saveProjects("data/ProjectList.csv");
-                System.out.println("Project deleted successfully.");
-            }
+        System.out.print("Are you sure you want to permanently delete project '" + project.getName() + "'? (Y/N): ");
+        String confirmation = scanner.nextLine().trim().toUpperCase();
+        if (confirmation.equals("Y")) {
+        	if (projectManager.deleteProject(project.getName())) {
+        	    projectManager.saveProjects("data/ProjectList.csv");
+
+        	    // Combine all applicants (including officers)
+        	    List<Applicant> allApplicants = new ArrayList<>();
+        	    allApplicants.addAll(applicantUserManager.getUsers());
+        	    allApplicants.addAll(officerUserManager.getUsers());
+
+        	    // Remove applications associated with the deleted project so that it will reflect in applicant
+        	    for (Applicant a : allApplicants) {
+        	        if (a.getAppliedProject() != null &&
+        	            a.getAppliedProject().getName().equalsIgnoreCase(project.getName())) {
+        	            a.setAppliedProject(null);
+        	            a.setRoomChosen(null);
+        	            a.setStatus(null);
+        	        }
+        	    }
+
+        	    // Save updated applications.csv
+        	    applicationManager.saveApplications("data/applications.csv", allApplicants);
+
+        	    System.out.println("Project deleted successfully and associated applications removed.");
+        	}
         } else {
             System.out.println("Deletion cancelled.");
         }
@@ -345,7 +427,7 @@ public class HDBManagerUI {
      private void toggleProjectVisibility() {
         System.out.println("--- Toggle Project Visibility ---");
         List<Project> myProjects = projectManager.getProjects().stream()
-                                     .filter(p -> p.getManager() != null && p.getManager().equalsIgnoreCase(this.manager.getNRIC()))
+                                     .filter(p -> p.getManager() != null && p.getManager().equalsIgnoreCase(this.manager.getName()))
                                      .collect(Collectors.toList());
 
         if (myProjects.isEmpty()) { System.out.println("You are not managing any projects."); return; }
@@ -374,7 +456,7 @@ public class HDBManagerUI {
     private void manageOfficerRegistrations() {
         System.out.println("--- Manage Officer Registrations ---");
         List<Project> myProjects = projectManager.getProjects().stream()
-                                     .filter(p -> p.getManager() != null && p.getManager().equalsIgnoreCase(this.manager.getNRIC()))
+                                     .filter(p -> p.getManager() != null && p.getManager().equalsIgnoreCase(this.manager.getName()))
                                      .collect(Collectors.toList());
 
         if (myProjects.isEmpty()) { System.out.println("You are not managing any projects."); return; }
@@ -435,7 +517,7 @@ public class HDBManagerUI {
     private void manageBTOApplications() {
         System.out.println("--- Manage BTO Applications ---");
          List<Project> myProjects = projectManager.getProjects().stream()
-                                     .filter(p -> p.getManager() != null && p.getManager().equalsIgnoreCase(this.manager.getNRIC()))
+                                     .filter(p -> p.getManager() != null && p.getManager().equalsIgnoreCase(this.manager.getName()))
                                      .collect(Collectors.toList());
 
          if (myProjects.isEmpty()) { System.out.println("You are not managing any projects."); return; }
@@ -492,35 +574,39 @@ public class HDBManagerUI {
         if (actionChoice == 1) {
              success = applicationManager.approveApplication(applicantToProcess);
              if (success) System.out.println("Application approved."); else System.out.println("Approval failed.");
+             applicationManager.saveApplications("data/applications.csv", allApplicants);
         } else if (actionChoice == 2) {
              success = applicationManager.rejectApplication(applicantToProcess);
              if (success) System.out.println("Application rejected."); else System.out.println("Rejection failed.");
+             applicationManager.saveApplications("data/applications.csv", allApplicants);
         } else {
             System.out.println("Action cancelled.");
         }
+        
     }
 
     private void manageApplicationWithdrawals() {
         System.out.println("--- Process Application Withdrawals ---");
 
+        //get names of projects managed by this manager
          List<Applicant> applicantsToReview = new ArrayList<>();
          List<Project> myProjects = projectManager.getProjects().stream()
-                                     .filter(p -> p.getManager() != null && p.getManager().equalsIgnoreCase(this.manager.getNRIC()))
+                                     .filter(p -> p.getManager() != null && p.getManager().equalsIgnoreCase(this.manager.getName()))
                                      .collect(Collectors.toList());
          List<String> myProjectNames = myProjects.stream().map(Project::getName).collect(Collectors.toList());
 
+         
+         //combine all applicants including officers
          Stream.concat(applicantUserManager.getUsers().stream(), officerUserManager.getUsers().stream())
                .map(user -> (Applicant) user)
                .filter(app -> app.getAppliedProject() != null &&
                               myProjectNames.contains(app.getAppliedProject().getName()) &&
-                              (app.getStatus() == ApplicationStatus.PENDING ||
-                               app.getStatus() == ApplicationStatus.SUCCESSFUL ||
-                               app.getStatus() == ApplicationStatus.BOOKED))
+                              app.getStatus() == ApplicationStatus.PENDING_WITHDRAWAL)
                .forEach(applicantsToReview::add);
 
 
         if (applicantsToReview.isEmpty()) {
-            System.out.println("No applications found in PENDING, SUCCESSFUL, or BOOKED status for your projects requiring withdrawal management.");
+            System.out.println("No applications with PENDING_WITHDRAWAL status for your projects requiring withdrawal management.");
             return;
         }
 
@@ -531,7 +617,7 @@ public class HDBManagerUI {
                               (i + 1), app.getNRIC(), app.getName(), app.getAppliedProject().getName(), app.getStatus());
         }
 
-        System.out.print("Select application # to process withdrawal for (Sets status to UNSUCCESSFUL) (Enter 0 to cancel): ");
+        System.out.print("Select application # to process withdrawal for (Sets status to SUCCESSFUL_WITHDRAWAL) (Enter 0 to cancel): ");
         int choice = -1;
         try { choice = scanner.nextInt(); } catch (InputMismatchException e) {}
         scanner.nextLine();
@@ -541,21 +627,46 @@ public class HDBManagerUI {
              return;
         }
         Applicant applicantToProcess = applicantsToReview.get(choice - 1);
+        Project project = applicantToProcess.getAppliedProject();
+        RoomType room = applicantToProcess.getRoomChosen();
+        
+        System.out.println("---------------------------------------------------");
+        System.out.println("Selected Applicant: " + applicantToProcess.getNRIC());
+        System.out.println("1. Approve Withdrawal");
+        System.out.println("2. Reject Withdrawal (set status back to PENDING)");
+        System.out.println("---------------------------------------------------");
+        System.out.print("Enter your choice: ");
+        
+        int decision = -1;
+        try { decision = scanner.nextInt(); } catch (InputMismatchException e) {}
+        scanner.nextLine();
 
-        System.out.println("Processing withdrawal for Applicant " + applicantToProcess.getNRIC() + " (Status: " + applicantToProcess.getStatus() + ")");
-        System.out.print("This will set their status to UNSUCCESSFUL. Confirm? (yes/no): ");
-        String confirmation = scanner.nextLine().trim().toLowerCase();
-
-        if (confirmation.equals("yes")) {
-            boolean success = applicationManager.withdrawApplication(applicantToProcess);
-            if (success) {
-                System.out.println("Withdrawal processed successfully. Applicant status is now UNSUCCESSFUL.");
-            } else {
-                 System.out.println("Withdrawal processing failed.");
+        if (decision == 1) {
+            // Approve withdrawal — clear application and restore room if necessary
+            if (project != null && room != null) {
+                boolean updated = projectManager.updateRoomAvailability(project, room, +1);
+                if (updated) {
+                    System.out.println("Room availability restored.");
+                }
             }
+            applicantToProcess.setAppliedProject(null);
+            applicantToProcess.setRoomChosen(null);
+            applicantToProcess.setStatus(null);
+            System.out.println("Withdrawal approved. Application deleted.");
+        } else if (decision == 2) {
+            applicantToProcess.setStatus(ApplicationStatus.PENDING);
+            System.out.println("Withdrawal rejected. Status reverted to PENDING.");
         } else {
-            System.out.println("Withdrawal processing cancelled.");
+            System.out.println("Invalid choice. Action cancelled.");
+            return;
         }
+
+        // Save updated application data
+        List<Applicant> allApplicants = new ArrayList<>();
+        allApplicants.addAll(applicantUserManager.getUsers());
+        allApplicants.addAll(officerUserManager.getUsers());
+        applicationManager.saveApplications("data/applications.csv", allApplicants);
+        
     }
 
 
@@ -569,8 +680,7 @@ public class HDBManagerUI {
              Enquiry e = allEnquiries.get(i);
              System.out.println("Enquiry #" + (i + 1));
              System.out.println(" Project:   " + e.getProjectName());
-             System.out.println(" From NRIC: " + e.getApplicantNRIC());
-             System.out.println(" From Name: " + e.getApplicantName());
+             System.out.println(" Name: " + e.getApplicantName() +" ("+e.getApplicantNRIC()+")");
              System.out.println(" Message:   " + e.getMessage());
              System.out.println(" Reply:     " + (e.getReply() == null || e.getReply().isEmpty() ? "<No Reply Yet>" : e.getReply()));
              System.out.println("-------------------------------------------------");
@@ -580,7 +690,7 @@ public class HDBManagerUI {
     private void replyToMyProjectEnquiries() {
          System.out.println("--- Reply to Enquiries for Projects You Handle ---");
          List<Project> myProjects = projectManager.getProjects().stream()
-                                     .filter(p -> p.getManager() != null && p.getManager().equalsIgnoreCase(this.manager.getNRIC()))
+                                     .filter(p -> p.getManager() != null && p.getManager().equalsIgnoreCase(this.manager.getName()))
                                      .collect(Collectors.toList());
 
          if (myProjects.isEmpty()) { System.out.println("You are not managing any projects."); return; }
@@ -595,8 +705,7 @@ public class HDBManagerUI {
                   count++;
                   relevantEnquiries.add(e);
                    System.out.println("Enquiry #" + count + " (Project: " + e.getProjectName() + ")");
-                   System.out.println(" From NRIC: " + e.getApplicantNRIC());
-                   System.out.println(" From Name: " + e.getApplicantName());
+                   System.out.println(" Name: " + e.getApplicantName() +" ("+e.getApplicantNRIC()+")");
                    System.out.println(" Message:   " + e.getMessage());
                    System.out.println(" Reply:     " + (e.getReply() == null || e.getReply().isEmpty() ? "<No Reply Yet>" : e.getReply()));
                    System.out.println("-------------------------------------------------");
@@ -615,9 +724,9 @@ public class HDBManagerUI {
 
          if (enquiryToReply.getReply() != null && !enquiryToReply.getReply().isEmpty()) {
             System.out.println("This enquiry has already been replied to.");
-            System.out.print("Do you want to overwrite the existing reply? (yes/no): ");
+            System.out.print("Do you want to overwrite the existing reply? (Y/N): ");
             String confirmation = scanner.nextLine().trim().toLowerCase();
-            if (!confirmation.equals("yes")) { System.out.println("Reply cancelled."); return; }
+            if (!confirmation.equals("Y")) { System.out.println("Reply cancelled."); return; }
         }
 
          System.out.print("Enter your reply: ");
@@ -679,9 +788,16 @@ public class HDBManagerUI {
 
         System.out.print("Enter new password: ");
         String newPassword = scanner.nextLine();
+        
+        if (newPassword.length() < 8) {
+            System.out.println("New password must be at least 8 characters long.");
+            return;
+        }
+        
         System.out.print("Confirm new password: ");
         String confirmPassword = scanner.nextLine();
 
+        
         if (!newPassword.equals(confirmPassword)) {
             System.out.println("New passwords do not match.");
             return;
@@ -702,7 +818,7 @@ public class HDBManagerUI {
         System.out.println(" Role:           " + manager.getRole());
 
         List<Project> myProjects = projectManager.getProjects().stream()
-                                     .filter(p -> p.getManager() != null && p.getManager().equalsIgnoreCase(this.manager.getNRIC()))
+                                     .filter(p -> p.getManager() != null && p.getManager().equalsIgnoreCase(this.manager.getName()))
                                      .collect(Collectors.toList());
         if (!myProjects.isEmpty()) {
              System.out.println("\n--- Projects Currently Managed ---");

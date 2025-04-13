@@ -15,13 +15,15 @@ public class BookingManager {
 
     private final ProjectManager projectManager;
     private final UserManager<Applicant> applicantUserManager;
+    private ApplicationManager applicationManager;
 
-    public BookingManager(ProjectManager projectManager, UserManager<Applicant> applicantUserManager) {
+    public BookingManager(ProjectManager projectManager, UserManager<Applicant> applicantUserManager, ApplicationManager applicationManager) {
         if (projectManager == null || applicantUserManager == null) {
             throw new IllegalArgumentException("ProjectManager and ApplicantUserManager cannot be null.");
         }
         this.projectManager = projectManager;
         this.applicantUserManager = applicantUserManager;
+        this.applicationManager = applicationManager;
     }
 
     public boolean bookFlat(Officer bookingOfficer, String applicantNRIC) {
@@ -52,26 +54,16 @@ public class BookingManager {
             return false;
         }
 
-        // 4. Attempt to Update Room Availability (Decrement count) via ProjectManager
-        boolean availabilityUpdated = projectManager.updateRoomAvailability(project, chosenRoom, -1);
+        applicant.setStatus(ApplicationStatus.BOOKED);
 
-        // 5. Process outcome
-        if (availabilityUpdated) {
-            // 5a. Update Applicant Status
-            applicant.setStatus(ApplicationStatus.BOOKED);
+        // Persist changes - Both Applicant and Project lists need saving
+        applicantUserManager.saveUsers();
+        applicationManager.saveApplications("data/Applications.csv", applicationManager.getAllApplicants());
+        projectManager.saveProjects("data/ProjectList.csv");
 
-            // 5b. Persist changes - Both Applicant and Project lists need saving
-            applicantUserManager.saveUsers();
-            projectManager.saveProjects("data/ProjectList.csv");
-
-            System.out.println("Flat (" + chosenRoom + ") booked successfully by Officer " + bookingOfficer.getName() +
+        System.out.println("Flat (" + chosenRoom + ") booked successfully by Officer " + bookingOfficer.getName() +
                                " for Applicant " + applicant.getNRIC() + " in project '" + project.getName() + "'. Status is now BOOKED.");
-            return true;
-
-        } else {
-            System.out.println("Booking failed for Applicant '" + applicantNRIC + "': Could not secure a unit for " + chosenRoom + " in project '" + project.getName() + "'.");
-            return false;
-        }
+        return true;
     }
 
      /**

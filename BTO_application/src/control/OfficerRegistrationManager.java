@@ -8,22 +8,18 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
-
 public class OfficerRegistrationManager {
 
     private final ProjectManager projectManager;
-    private final UserManager<Officer> officerUserManager;
-    // Optional: May need access to all projects for cross-project checks
-    // private final List<Project> allProjects; // Get via projectManager
+    private final OfficerUserManager officerUserManager;
 
-    public OfficerRegistrationManager(ProjectManager projectManager, UserManager<Officer> officerUserManager) {
+    public OfficerRegistrationManager(ProjectManager projectManager, OfficerUserManager officerUserManager) {
         if (projectManager == null || officerUserManager == null) {
-             throw new IllegalArgumentException("ProjectManager and OfficerUserManager cannot be null.");
+            throw new IllegalArgumentException("ProjectManager and OfficerUserManager cannot be null.");
         }
         this.projectManager = projectManager;
         this.officerUserManager = officerUserManager;
     }
-
 
     public boolean requestRegistration(Officer officer, Project project) {
         if (officer == null || project == null) {
@@ -31,145 +27,95 @@ public class OfficerRegistrationManager {
             return false;
         }
 
-        // --- Eligibility Checks ---
-
-        // 1. Check if Officer has already applied for this project as an Applicant
+        // 1. Officer cannot have applied as an applicant to this project
         if (officer.getAppliedProject() != null && officer.getAppliedProject().equals(project)) {
-             System.out.println("Registration failed: You have already submitted an application for project '" + project.getName() + "' as an Applicant.");
-             return false;
+            System.out.println("Registration failed: You have already applied to this project as an Applicant.");
+            return false;
         }
 
-        // 2. Check if the *requesting* officer is already APPROVED for another project with an overlapping application period.
-        if (officer.getRegistrationStatus() == OfficerRegistrationStatus.APPROVED && officer.getRegisteredProject() != null) {
-            Project currentProject = officer.getRegisteredProject();
-            LocalDate projectOpenDate = project.getOpenDate();
-            LocalDate projectCloseDate = project.getCloseDate();
-            LocalDate currentOpen = currentProject.getOpenDate();
-            LocalDate currentClose = currentProject.getCloseDate();
+        // 2. Officer cannot be APPROVED for a project with overlapping application dates
+        LocalDate newOpen = project.getOpenDate();
+        LocalDate newClose = project.getCloseDate();
 
-            // Check dates are valid and perform overlap check
-            // Overlap exists if (StartA <= EndB) and (EndA >= StartB)
-            if (projectOpenDate != null && projectCloseDate != null && currentOpen != null && currentClose != null &&
-                !projectOpenDate.isAfter(currentClose) && // Target start <= Current end
-                !projectCloseDate.isBefore(currentOpen))  // Target end >= Current start
-            {
-                // If BOTH conditions are true, the periods overlap
-                System.out.println("Registration failed: You are already approved for project '" + currentProject.getName() + "' which has an overlapping application period with '" + project.getName() + "'.");
-                return false; // Prevent registration because of overlap
+        for (Project existing : officer.getRegisteredProjects()) {
+            OfficerRegistrationStatus status = officer.getRegistrationStatusForProject(existing);
+            if (status == OfficerRegistrationStatus.APPROVED) {
+                LocalDate existOpen = existing.getOpenDate();
+                LocalDate existClose = existing.getCloseDate();
+                boolean overlaps = !(newClose.isBefore(existOpen) || newOpen.isAfter(existClose));
+                if (overlaps) {
+                    System.out.println("Registration failed: Overlaps with approved project '" + existing.getName() + "'.");
+                    return false;
+                }
             }
-       }
-
-        // 3. Check if Officer already has a PENDING registration for *any* project
-        if (officer.getRegistrationStatus() == OfficerRegistrationStatus.PENDING && officer.getRegisteredProject() != null) {
-              System.out.println("Registration failed: You already have a pending registration for project '" + officer.getRegisteredProject().getName() + "'. Please wait for approval or withdraw it.");
-              return false;
         }
 
-        // 4. Check if project has available officer slots
+        // 3. Officer cannot already have a pending registration for this project
+        OfficerRegistrationStatus existingStatus = officer.getRegistrationStatusForProject(project);
+        if (existingStatus == OfficerRegistrationStatus.PENDING) {
+            System.out.println("Registration failed: Already pending for project '" + project.getName() + "'.");
+            return false;
+        }
+
+        // 4. Check available slots
         if (project.getOfficerSlot() <= 0) {
-            System.out.println("Registration failed: Project '" + project.getName() + "' has no available HDB Officer slots.");
+            System.out.println("Registration failed: No slots left for '" + project.getName() + "'.");
             return false;
         }
 
-
-        // --- All checks passed: Set status to PENDING ---
-        officer.setRegisteredProject(project);
-        officer.setRegistrationStatus(OfficerRegistrationStatus.PENDING);
+        // --- Register ---
+        officer.addRegisteredProject(project, OfficerRegistrationStatus.PENDING);
         officerUserManager.saveUsers();
-
-        System.out.println("Registration request for project '" + project.getName() + "' submitted successfully. Status is now PENDING.");
+        System.out.println("Registration request submitted. Status: PENDING.");
         return true;
     }
 
-
-    public boolean approveRegistration(Manager approver, Officer officerToApprove) {
-        if (approver == null || officerToApprove == null) {
-            System.err.println("Approval failed: Approver or Officer cannot be null.");
-            return false;
+    public boolean approveRegistration(Manager approver, Officer officer) {
+        for (Project project : officer.getRegisteredProjects()) {
+            OfficerRegistrationStatus status = officer.getRegistrationStatusForProject(project);
+            if (status == OfficerRegistrationStatus.PENDING && project.getManager().equalsIgnoreCase(approver.getName())) {
+                if (project.getOfficerSlot() <= 0) {
+                    System.out.println("Approval failed: No slots left for project '" + project.getName() + "'.");
+                    return false;
+                }
+                officer.updateRegistrationStatus(project, OfficerRegistrationStatus.APPROVED);
+                project.setOfficerSlot(project.getOfficerSlot() - 1);
+                officerUserManager.updateProjectListCSV(project, officer.getName());
+                project.addOfficer(officer.getName());
+                officerUserManager.saveUsers();
+                projectManager.saveProjects("data/ProjectList.csv");
+                System.out.println("Officer " + officer.getName() + " approved for project '" + project.getName() + "'.");
+                return true;
+            }
         }
-
-        Project project = officerToApprove.getRegisteredProject();
-
-        // 1. Check if a project is actually assigned for registration
-        if (project == null) {
-            System.err.println("Approval failed: Officer " + officerToApprove.getNRIC() + " has no project pending registration.");
-            return false;
-        }
-
-        // 2. Verify the Officer's status is PENDING
-        if (officerToApprove.getRegistrationStatus() != OfficerRegistrationStatus.PENDING) {
-            System.err.println("Approval failed: Officer " + officerToApprove.getNRIC() + "'s registration status is not PENDING (Current: " + officerToApprove.getRegistrationStatus() + ").");
-            return false;
-        }
-
-        // 3. Verify the approver is the Manager in charge of the project
-        if (!project.getManager().equalsIgnoreCase(approver.getNRIC())) {
-            System.err.println("Approval failed: Manager " + approver.getNRIC() + " is not authorized to approve registrations for project '" + project.getName() + "'.");
-            return false;
-        }
-
-        // 4. Check project still has slots
-        if (project.getOfficerSlot() <= 0) {
-             System.err.println("Approval failed: Project '" + project.getName() + "' has no available HDB Officer slots remaining.");
-             return false;
-        }
-
-        officerToApprove.setRegistrationStatus(OfficerRegistrationStatus.APPROVED);
-        project.setOfficerSlot(project.getOfficerSlot() - 1);
-        officerUserManager.saveUsers();
-        projectManager.saveProjects("data/ProjectList.csv");
-
-        System.out.println("Registration for Officer " + officerToApprove.getNRIC() + " approved for project '" + project.getName() + "'.");
-        return true;
+        System.out.println("Approval failed: No matching PENDING registration for this manager.");
+        return false;
     }
 
-
-
-    public boolean rejectRegistration(Manager rejector, Officer officerToReject) {
-        if (rejector == null || officerToReject == null) {
-            System.err.println("Rejection failed: Rejector or Officer cannot be null.");
-            return false;
+    public boolean rejectRegistration(Manager rejector, Officer officer) {
+        for (Project project : officer.getRegisteredProjects()) {
+            OfficerRegistrationStatus status = officer.getRegistrationStatusForProject(project);
+            if (status == OfficerRegistrationStatus.PENDING && project.getManager().equalsIgnoreCase(rejector.getNRIC())) {
+                officer.updateRegistrationStatus(project, OfficerRegistrationStatus.REJECTED);
+                officerUserManager.saveUsers();
+                System.out.println("Officer " + officer.getName() + " rejected for project '" + project.getName() + "'.");
+                return true;
+            }
         }
-
-        Project project = officerToReject.getRegisteredProject();
-
-        // 1. Check if a project is actually assigned for registration
-        if (project == null) {
-            System.err.println("Rejection failed: Officer " + officerToReject.getNRIC() + " has no project pending registration.");
-            return false;
-        }
-
-        // 2. Verify the Officer's status is PENDING
-        if (officerToReject.getRegistrationStatus() != OfficerRegistrationStatus.PENDING) {
-            System.err.println("Rejection failed: Officer " + officerToReject.getNRIC() + "'s registration status is not PENDING (Current: " + officerToReject.getRegistrationStatus() + ").");
-            return false;
-        }
-
-        // 3. Verify the rejector is the Manager in charge of the project
-        if (!project.getManager().equalsIgnoreCase(rejector.getNRIC())) {
-            System.err.println("Rejection failed: Manager " + rejector.getNRIC() + " is not authorized to reject registrations for project '" + project.getName() + "'.");
-            return false;
-        }
-
-        officerToReject.setRegistrationStatus(OfficerRegistrationStatus.REJECTED);
-        officerUserManager.saveUsers();
-        System.out.println("Registration for Officer " + officerToReject.getNRIC() + " rejected for project '" + project.getName() + "'.");
-        return true;
+        System.out.println("Rejection failed: No matching PENDING registration for this manager.");
+        return false;
     }
-
 
     public List<Officer> getPendingRegistrationsForProject(Project project) {
-         List<Officer> pendingOfficers = new ArrayList<>();
-         if (project == null) return pendingOfficers;
-
-         List<Officer> allOfficers = officerUserManager.getUsers();
-         for (Officer officer : allOfficers) {
-              if (officer.getRegistrationStatus() == OfficerRegistrationStatus.PENDING &&
-                  officer.getRegisteredProject() != null &&
-                  officer.getRegisteredProject().equals(project)) {
-                  pendingOfficers.add(officer);
-              }
-         }
-         return pendingOfficers;
+        List<Officer> pending = new ArrayList<>();
+        if (project == null) return pending;
+        for (Officer officer : officerUserManager.getUsers()) {
+            if (OfficerRegistrationStatus.PENDING.equals(officer.getRegistrationStatusForProject(project))) {
+                pending.add(officer);
+            }
+        }
+        return pending;
     }
+    
 }
+

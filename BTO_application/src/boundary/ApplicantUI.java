@@ -124,9 +124,17 @@ public class ApplicantUI {
 
         System.out.print("Enter new password: ");
         String newPassword = scanner.nextLine();
+        
+        if (newPassword.length() < 8) {
+            System.out.println("New password must be at least 8 characters long.");
+            return;
+        }
+        
         System.out.print("Confirm new password: ");
         String confirmPassword = scanner.nextLine();
 
+
+        
         if (!newPassword.equals(confirmPassword)) {
             System.out.println("New passwords do not match.");
             return;
@@ -245,9 +253,35 @@ public class ApplicantUI {
 
         RoomType chosenRoom = eligibleRoomTypes.get(roomChoice - 1);
 
-        boolean success = applicationManager.apply(this.applicant, selectedProject, chosenRoom);
+     // Check availability before submitting
+     Room selectedRoom = null;
+     for (Room r : selectedProject.getRooms()) {
+         if (r.getRoomType() == chosenRoom) {
+             selectedRoom = r;
+             break;
+         }
+     }
 
-        if (!success) { System.out.println("Application submission failed. Please check previous messages for reasons."); }
+     if (selectedRoom == null || selectedRoom.getAvailableRooms() <= 0) {
+         System.out.println("Sorry, there are no more available units for " + chosenRoom + " in project '" + selectedProject.getName() + "'.");
+         return;
+     }
+
+     // Proceed with application
+     boolean success = applicationManager.apply(this.applicant, selectedProject, chosenRoom);
+
+     // Decrement room availability only if application succeeded
+     if (success) {
+         boolean updated = projectManager.updateRoomAvailability(selectedProject, chosenRoom, -1);
+         if (!updated) {
+             System.err.println("Application recorded, but failed to update room availability.");
+         } else {
+             System.out.println("Application submitted successfully. Room availability updated.");
+         }
+     } else {
+         System.out.println("Application submission failed.");
+     }
+     projectManager.saveProjects("data/ProjectList.csv");
     }
 
      private List<RoomType> getEligibleRoomTypesForProject(Applicant applicant, Project project) {
@@ -269,7 +303,7 @@ public class ApplicantUI {
 
 
     protected void viewApplicationStatus() {
-        System.out.println("--- My Application Status ---");
+        System.out.println("--------- My Application Status ---------");
         displayApplicantApplicationStatus(this.applicant);
     }
 
@@ -303,36 +337,39 @@ public class ApplicantUI {
     }
 
     protected void withdrawApplication() {
-        System.out.println("--- Withdraw Application ---");
+        System.out.println("---------- Withdraw Application ----------");
 
         ApplicationStatus currentStatus = applicant.getStatus();
         Project currentProject = applicant.getAppliedProject();
-
-        if (currentStatus == null || currentStatus == ApplicationStatus.UNSUCCESSFUL) {
+        
+        if (currentStatus == null || currentStatus == ApplicationStatus.UNSUCCESSFUL || currentStatus == ApplicationStatus.PENDING_WITHDRAWAL) {
              System.out.println("You do not have an application that can be withdrawn.");
              return;
          }
+        
+        System.out.println("You are requesting to withdraw your application for project: " +
+                (currentProject != null ? currentProject.getName() : "<Unknown>"));
+            System.out.println("Current Status: " + currentStatus);
+            System.out.println();
+            System.out.println(">>> IMPORTANT: Submitting this request will set your application status to PENDING_WITHDRAWAL.");
+            System.out.println(">>> The request will be reviewed by an HDB Manager.");
 
-        System.out.println("You are requesting to withdraw your application for project: " + (currentProject != null ? currentProject.getName() : "<Unknown>"));
-        System.out.println("Current Status: " + currentStatus);
-        System.out.println("IMPORTANT: Withdrawing will set your application status to UNSUCCESSFUL.");
-        if (currentStatus == ApplicationStatus.SUCCESSFUL || currentStatus == ApplicationStatus.BOOKED) {
-            System.out.println("Withdrawal from a SUCCESSFUL or BOOKED application typically requires HDB Manager approval.");
-            System.out.println("Proceeding here assumes necessary coordination has occurred or will occur.");
-        }
-        System.out.print("Are you sure you want to withdraw? (Y/N): ");
-        String confirmation = scanner.nextLine().trim().toLowerCase();
+            System.out.print("Are you sure you want to request withdrawal? (Y/N): ");
+            String confirmation = scanner.nextLine().trim().toUpperCase();
 
-        if (confirmation.equals("Y")) {
-            boolean success = applicationManager.withdrawApplication(this.applicant);
-            if (success) {
-                 System.out.println("Withdrawal processed. Your application status is now UNSUCCESSFUL.");
+            if (confirmation.equals("Y") || confirmation.equals("yes")) {
+                boolean success = applicationManager.withdrawApplication(this.applicant);
+                if (success) {
+                    System.out.println();
+                    System.out.println("Withdrawal request submitted. HDB Manager will be reviewing your request.");
+
+                    applicationManager.saveApplications("data/applications.csv", applicationManager.getAllApplicants());
+                } else {
+                    System.out.println("Withdrawal process failed. Please check your current application status or contact HDB.");
+                }
             } else {
-                 System.out.println("Withdrawal process failed. Please check previous messages or contact HDB.");
+                System.out.println("Withdrawal cancelled.");
             }
-        } else {
-            System.out.println("Withdrawal cancelled.");
-        }
     }
 
     protected void submitEnquiry() {
@@ -361,7 +398,7 @@ public class ApplicantUI {
         Project chosenProject = allProjects.get(projectChoice - 1);
             	
     	System.out.println("Enter your enquiry: ");
-    	String message = scanner.next();
+    	String message = scanner.nextLine();
     	
         Enquiry e = new Enquiry(applicant.getNRIC(), applicant.getName(), chosenProject.getName(), message);
         enquiryManager.submitEnquiry(e);
@@ -386,7 +423,14 @@ public class ApplicantUI {
             System.out.println("Enquiry #" + (i + 1));
             System.out.println(" Project: " + e.getProjectName());
             System.out.println(" Message: " + e.getMessage());
-            System.out.println(" Reply:   " + (e.getReply() == null || e.getReply().isEmpty() ? "<No Reply Yet>" : e.getReply()));
+            if (e.getReply() == null || e.getReply().isEmpty()) {
+                System.out.println(" Reply:     <No Reply Yet>");
+            } else {
+                System.out.println(" Reply:     " + e.getReply());
+                System.out.println(" Replied By:" + (e.getReplyingOfficer() != null && !e.getReplyingOfficer().isEmpty()
+                    ? " " + e.getReplyingOfficer()
+                    : " <Unknown>"));
+            }
             System.out.println("-------------------------------------------------");
         }
 
@@ -435,9 +479,9 @@ public class ApplicantUI {
                 } else { System.out.println("Failed to edit enquiry (perhaps it was replied to recently?)."); }
             } else { System.out.println("New message cannot be empty. Edit cancelled."); }
         } else if (actionChoice == 2) {
-            System.out.print("Are you sure you want to delete Enquiry #" + choice + "? (yes/no): ");
-            String confirmation = scanner.nextLine().trim().toLowerCase();
-            if (confirmation.equals("yes")) {
+            System.out.print("Are you sure you want to delete Enquiry #" + choice + "? (Y/N): ");
+            String confirmation = scanner.nextLine().trim().toUpperCase();
+            if (confirmation.equals("Y")) {
                  boolean deleted = enquiryManager.deleteEnquiry(selectedEnquiry, applicant.getNRIC());
                  if (deleted) {
                      enquiryManager.saveEnquiries();
