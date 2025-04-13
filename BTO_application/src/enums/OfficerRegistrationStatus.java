@@ -1,5 +1,7 @@
 package enums;
 
-public class OfficerRegistrationStatus {
-
+public enum OfficerRegistrationStatus {
+    PENDING,
+    APPROVED,
+    REJECTED
 }

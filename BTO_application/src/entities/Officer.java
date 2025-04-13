@@ -2,18 +2,20 @@ package entities;
 
 import enums.OfficerRegistrationStatus;
 
+import java.util.*;
+
 /**
  * Represents an HDB Officer.
  * An Officer is a type of Applicant with additional fields for officer registration.
  */
 public class Officer extends Applicant {
-    
-    // The project for which the officer is registered as an HDB Officer.
-    private Project registeredProject;
-    
-    // The registration status (e.g., PENDING, APPROVED, REJECTED).
-    private OfficerRegistrationStatus registrationStatus;
-    
+
+    // A list of projects the officer is registered to handle.
+    private List<Project> registeredProjects;
+
+    // A map of registration status per project.
+    private Map<Project, OfficerRegistrationStatus> registrationStatuses;
+
     /**
      * Constructs a new Officer.
      * @param name The officer's name.
@@ -24,44 +26,55 @@ public class Officer extends Applicant {
      */
     public Officer(String name, String NRIC, int age, boolean isMarried, String password) {
         super(name, NRIC, age, isMarried, password);
-        this.registeredProject = null;
-        this.registrationStatus = null; // No registration by default.
+        this.registeredProjects = new ArrayList<>();
+        this.registrationStatuses = new HashMap<>();
     }
-    
+
     /**
-     * Returns the project for which the officer is registered.
-     * @return the registered project.
+     * Adds a project the officer is registered for.
+     * @param project the project.
+     * @param status the registration status.
      */
-    public Project getRegisteredProject() {
-        return registeredProject;
+    public void addRegisteredProject(Project project, OfficerRegistrationStatus status) {
+        if (!registeredProjects.contains(project)) {
+            registeredProjects.add(project);
+            registrationStatuses.put(project, status);
+        }
     }
-    
+
     /**
-     * Sets the project for which the officer is registered.
-     * @param registeredProject the project to set.
+     * Returns the list of projects the officer is handling.
+     * @return list of registered projects.
      */
-    public void setRegisteredProject(Project registeredProject) {
-        this.registeredProject = registeredProject;
+    public List<Project> getRegisteredProjects() {
+        return registeredProjects;
     }
-    
+
     /**
-     * Returns the registration status of the officer.
-     * @return the registration status.
+     * Gets the registration status for a specific project.
+     * @param project the project.
+     * @return the registration status, or null if not found.
      */
-    public OfficerRegistrationStatus getRegistrationStatus() {
-        return registrationStatus;
+    public OfficerRegistrationStatus getRegistrationStatusForProject(Project project) {
+        return registrationStatuses.get(project);
     }
-    
+
     /**
-     * Sets the registration status of the officer.
-     * @param registrationStatus the registration status to set.
+     * Updates the registration status for a specific project.
+     * @param project the project.
+     * @param status the new status.
      */
-    public void setRegistrationStatus(OfficerRegistrationStatus registrationStatus) {
-        this.registrationStatus = registrationStatus;
+    public void updateRegistrationStatus(Project project, OfficerRegistrationStatus status) {
+        if (registeredProjects.contains(project)) {
+            registrationStatuses.put(project, status);
+        }
     }
-    
+
+    /**
+     * Overrides applied project for officer (used by Applicant part).
+     * @param newProject the applied project.
+     */
     public void setAppliedProject(Project newProject) {
-    	super.setAppliedProject(newProject);
-        this.registeredProject = newProject;
+        super.setAppliedProject(newProject);
     }
 }

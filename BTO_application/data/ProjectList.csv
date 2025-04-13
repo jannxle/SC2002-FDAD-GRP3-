@@ -1,2 +1,4 @@
-Project Name,Neighborhood,Type 1,Number of units for Type 1,Selling price for Type 1,Type 2,Number of units for Type 2,Selling price for Type 2,Application opening date,Application closing date,Manager,Officer Slot,Officer
-Acacia Breeze,Yishun,2-Room,2,350000,3-Room,3,450000,15/2/25,20/3/25,Jessica,3,Daniel,Emily
+Project Name,Neighbourhood,Type 1,Num Units 1,Price 1,Type 2,Num Units 2,Price 2,Open Date,Close Date,Manager Name,Officer Slots,Officer Name,Visibility
+Acacia Breeze,Yishun,TwoRoom,2,350000.0,ThreeRoom,3,450000.0,15/2/25,20/3/25,Jessica,3,Daniel;Emily,true
+Suites,sengkang,TwoRoom,100,4800000.0,ThreeRoom,50,5000000.0,11/4/25,30/6/25,Jessica,1,Emily;David,true
+bishan condo,bishan,TwoRoom,2,2000000.0,ThreeRoom,1,3000000.0,12/4/25,20/6/25,Michael,0,Daniel,true
