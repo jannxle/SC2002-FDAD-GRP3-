@@ -777,7 +777,7 @@ public class HDBManagerUI {
     }
 
     private void changePassword() {
-         System.out.println("--- Change Password ---");
+         System.out.println("----------- Change Password -----------");
          System.out.print("Enter current password: ");
          String currentPassword = scanner.nextLine();
 
