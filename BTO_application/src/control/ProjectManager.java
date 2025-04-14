@@ -119,53 +119,56 @@ public class ProjectManager {
              System.err.println("Cannot update room availability for a null project.");
              return false;
         }
-        Room targetRoom = null;
-        for (Room r : project.getRooms()) {
-            if (r.getRoomType() == roomType) {
-                targetRoom = r;
-                break;
-            }
-        }
-
-        if (targetRoom == null) {
-             System.err.println("Room type " + roomType + " not found in project '" + project.getName() + "'.");
-             return false;
-        }
-
-        boolean success = false;
-        if (change < 0) { // Decrement (Booking)
-            int count = -change;
-            success = true; // Assume success initially
-            for (int i = 0; i < count; i++) {
-                if (!targetRoom.decrementAvailableRooms()) { // Assuming Room.decrementAvailableRooms returns boolean success
-                    System.err.println("Failed to decrement available rooms for " + roomType + " in project '" + project.getName() + "'. No more rooms available?");
-                    // Optional: revert any decrements made in this loop if partial success is not desired
-                    success = false;
-                    break;
+        
+        for (Project p : projects) {
+            if (p.getName().equalsIgnoreCase(project.getName())) {
+                Room targetRoom = null;
+                for (Room r : project.getRooms()) {
+                    if (r.getRoomType() == roomType) {
+                        targetRoom = r;
+                        break;
+                    }
                 }
+
+                if (targetRoom == null) {
+                    System.err.println("Room type " + roomType + " not found in project '" + project.getName() + "'.");
+                    return false;
+                }
+
+                boolean success = false;
+                if (change < 0) {
+                    success = true;
+                    for (int i = 0; i < -change; i++) {
+                        if (!targetRoom.decrementAvailableRooms()) {
+                            System.err.println("Failed to decrement available rooms.");
+                            success = false;
+                            break;
+                        }
+                    }
+                } else if (change > 0) {
+                    success = true;
+                    for (int i = 0; i < change; i++) {
+                        if (!targetRoom.incrementAvailableRooms()) {
+                            System.err.println("Failed to increment available rooms.");
+                            success = false;
+                            break;
+                        }
+                    }
+                } else {
+                    success = true;
+                }
+
+                if (success && change != 0) {
+                    System.out.println("Room availability updated in memory.");
+                }
+
+                return success;
             }
-        } else if (change > 0) { // Increment (Withdrawn)
-             int count = change;
-             success = true; // Assume success initially
-             for (int i = 0; i < count; i++) {
-                 if (!targetRoom.incrementAvailableRooms()) { // Assuming Room.incrementAvailableRooms returns boolean success
-                    System.err.println("Failed to increment available rooms for " + roomType + " in project '" + project.getName() + "'. Already at maximum?");
-                    // Optional: revert any increments made in this loop if partial success is not desired
-                    success = false;
-                    break;
-                 }
-             }
-        } else {
-             // Change is zero, do nothing but consider it successful.
-             success = true;
         }
 
-        if (success && change != 0) {
-             System.out.println("Room availability for " + roomType + " in project '" + project.getName() + "' updated by " + change + " in memory.");
-        }
-        return success;
+        System.err.println("Project not found in project list.");
+        return false;
     }
-
 
     public boolean assignOfficerToProject(String projectName, String officerName) {
     	Project project = findProjectByName(projectName);
@@ -187,12 +190,12 @@ public class ProjectManager {
         if (rooms != null && !rooms.isEmpty()) {
              Room r1 = rooms.get(0);
              type1 = r1.getRoomType() != null ? r1.getRoomType().name() : "";
-             units1 = String.valueOf(r1.getTotalRooms());
+             units1 = String.valueOf(r1.getAvailableRooms());
              price1 = String.valueOf(r1.getPrice());
              if (rooms.size() >= 2) {
                 Room r2 = rooms.get(1);
                 type2 = r2.getRoomType() != null ? r2.getRoomType().name() : "";
-                units2 = String.valueOf(r2.getTotalRooms());
+                units2 = String.valueOf(r2.getAvailableRooms());
                 price2 = String.valueOf(r2.getPrice());
              }
         }

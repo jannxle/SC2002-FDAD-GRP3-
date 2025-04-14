@@ -582,7 +582,7 @@ public class HDBManagerUI {
         } else {
             System.out.println("Action cancelled.");
         }
-        
+        projectManager.saveProjects("data/ProjectList.csv");
     }
 
     private void manageApplicationWithdrawals() {
