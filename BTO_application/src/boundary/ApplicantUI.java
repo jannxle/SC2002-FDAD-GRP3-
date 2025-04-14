@@ -7,6 +7,9 @@ import java.util.Scanner;
 import java.time.LocalDate;
 
 import auth.LoginManager;
+
+import java.time.LocalDate;
+
 import control.ApplicantManager;
 import control.ApplicationManager;
 import control.EnquiryManager;

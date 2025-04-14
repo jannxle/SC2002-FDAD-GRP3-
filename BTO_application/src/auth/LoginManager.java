@@ -5,8 +5,6 @@ import java.util.Scanner;
 import boundary.ApplicantUI;
 import boundary.HDBManagerUI;
 import boundary.HDBOfficerUI;
-
-import control.UserManager;
 import control.ApplicantManager;
 import control.ApplicationManager;
 import control.BookingManager;
@@ -14,9 +12,13 @@ import control.EnquiryManager;
 import control.OfficerRegistrationManager;
 import control.ProjectManager;
 import control.ReportManager;
-
-import entities.*;
-
+import control.UserManager;
+import entities.Applicant;
+import entities.Manager;
+import entities.Officer;
+import entities.User;
+import utils.CustomExceptions.*;
+import utils.CustomExceptions.IncorrectLoginDetailsException;
 
 public class LoginManager {
 	private final ApplicantManager applicantManager;
@@ -29,6 +31,7 @@ public class LoginManager {
 	private final OfficerRegistrationManager officerRegistrationManager;
     private final BookingManager bookingManager;
     private final ReportManager reportManager;
+
 
 	public LoginManager(ApplicantManager applicantManager,
                         UserManager<Applicant> applicantUserManager,
@@ -58,24 +61,25 @@ public class LoginManager {
         return nric.matches("^[ST]\\d{7}[A-Za-z]$");
     }
 
-	public void login() {
-		Scanner scanner = new Scanner(System.in);
+	public User login(String inputNRIC, String inputPassword) throws IncorrectUsernameException, IncorrectLoginDetailsException{
+		//Scanner scanner = new Scanner(System.in);
 		boolean loggedIn = false;
         User authenticatedUser = null;
 
 		while (!loggedIn) {
-			System.out.println("\n---- BTO Management System Login ----");
-			System.out.print("Enter NRIC: ");
-			String inputNRIC = scanner.nextLine().trim().toUpperCase();
+			//System.out.println("\n---- BTO Management System Login ----");
+			//System.out.print("Enter NRIC: ");
+			//String inputNRIC = scanner.nextLine().trim().toUpperCase();
 
 			if(!isValidNRIC(inputNRIC)) {
-				System.out.println("Invalid NRIC format. Please try again (e.g., S1234567A).");
-				continue;
+				throw new IncorrectUsernameException("Invalid NRIC format");
+				//System.out.println("Invalid NRIC format. Please try again (e.g., S1234567A).");
+				//continue;
 			}
 
-			System.out.print("Enter Password: ");
-			String inputPassword = scanner.nextLine();
-			System.out.println();
+			//System.out.print("Enter Password: ");
+			//String inputPassword = scanner.nextLine();
+			//System.out.println();
 
 			authenticatedUser = null;
 			boolean found = false;
@@ -110,7 +114,10 @@ public class LoginManager {
 
 			// Process Login Result
 			if (found && authenticatedUser != null) {
-                loggedIn = true;
+				return authenticatedUser;
+			}
+/*                
+				loggedIn = true;
                 System.out.println("Login Successful!");
                 System.out.println("Welcome " + authenticatedUser.getName() + "!");
 
@@ -165,11 +172,14 @@ public class LoginManager {
                 } else {
                      System.err.println("Error: Authenticated user type unknown.");
                 }
-
-			} else {
-				System.out.println("Login Unsuccessful. Invalid NRIC or Password.");
+			*/
+			else {
+				throw new IncorrectLoginDetailsException("Invalid NRIC or Password.");
+				//System.out.println("Login Unsuccessful. Invalid NRIC or Password.");
 			}
+
 		}
+		return authenticatedUser;
 	}
 
     public void logout(User user) {
@@ -178,6 +188,6 @@ public class LoginManager {
          } else {
              System.out.println("\nLogging out...");
          }
-         login();
+         //login();
     }
 }

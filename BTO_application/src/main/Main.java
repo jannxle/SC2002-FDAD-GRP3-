@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import auth.LoginManager;
+import boundary.PageManager;
 import entities.Applicant;
 import entities.Officer;
 import entities.Manager;
@@ -49,25 +50,43 @@ public class Main {
              allApplicants,
              projectManager.getProjects()
         );
+        
+        LoginManager loginManager = new LoginManager(
+                applicantManager,
+                applicantUserManager,
+                officerUserManager,
+                managerUserManager,
+                enquiryManager,
+                applicationManager,
+                projectManager,
+                officerRegistrationManager,
+                bookingManager,
+                reportManager
+            );
 
         System.out.println("Initialization complete. Starting Login...");
         System.out.println("-----------------------------------------");
 
-        LoginManager loginManager = new LoginManager(
-            applicantManager,
-            applicantUserManager,
-            officerUserManager,
-            managerUserManager,
-            enquiryManager,
-            applicationManager,
-            projectManager,
-            officerRegistrationManager,
-            bookingManager,
-            reportManager
-        );
+        PageManager pageManager = new PageManager(
+        		applicantManager,
+                applicantUserManager,
+                officerUserManager,
+                managerUserManager,
+                enquiryManager,
+                applicationManager,
+                projectManager,
+                officerRegistrationManager,
+                bookingManager,
+                reportManager,
+                loginManager
+        		
+       );
+        
+
 
         // --- Start the Application ---
-        loginManager.login(); //
+        //loginManager.login();
+        pageManager.start();
 
         // --- Save Data on Exit ---
         System.out.println("\n-----------------------------------------");
