@@ -20,7 +20,7 @@ public class ApplicationManager {
     private static final String APPLICATIONS_FILE_PATH = "data/Applications.csv";
     private final ProjectManager projectManager;
     private final UserManager<Applicant> applicantUserManager;
-    private UserManager<Officer> officerUserManager;
+    private UserManager<Officer> officerUserManager; 
 
     public ApplicationManager(ProjectManager projectManager, UserManager<Applicant> applicantUserManager, UserManager<Officer> officerUserManager) {
         if (projectManager == null || applicantUserManager == null) {
@@ -53,8 +53,8 @@ public class ApplicationManager {
 
         // Check if the chosenRoom type exists in the project.
         boolean roomTypeExists = false;
-        for (Room room : project.getRooms()) { //
-            if (room.getRoomType() == chosenRoom) { //
+        for (Room room : project.getRooms()) {
+            if (room.getRoomType() == chosenRoom) {
                 roomTypeExists = true;
                 break;
             }
@@ -78,6 +78,10 @@ public class ApplicationManager {
         System.out.println("Application for project '" + project.getName() + "' submitted successfully. Status is now PENDING."); //
         return true;
     }
+    
+    /** EDGE CASE: - Shrey
+     * Officer is registered to the project can is able to apply as an applicant.
+     */
 
     /**
      * Withdraws an Applicant's application.
@@ -101,7 +105,7 @@ public class ApplicationManager {
             currentStatus == ApplicationStatus.BOOKED) {
 
             // If status was BOOKED, increment room availability first
-            if (currentStatus == ApplicationStatus.BOOKED) { //
+            if (currentStatus == ApplicationStatus.BOOKED) { // Unsure why is this being checked first, also User can withdraw from booked status. So status goes BOOKED -> UNSUCCESSFUL then. - Shrey
                 if (currentProject == null || currentRoom == null) {
                     System.err.println("Withdrawal Error: Cannot process withdrawal from BOOKED status.");
                     return false;
@@ -109,7 +113,7 @@ public class ApplicationManager {
             }
 
             // Set status to UNSUCCESSFUL and clear details
-            applicant.setStatus(ApplicationStatus.PENDING_WITHDRAWAL); //
+            applicant.setStatus(ApplicationStatus.PENDING_WITHDRAWAL); // I am gonna assume this will be made into an internal status, since they don't want to see pending withdrawal as a status - Shrey
 
             // SAV
 
@@ -124,7 +128,7 @@ public class ApplicationManager {
                 }
             }
 
-            System.out.println("Application for project '" + (currentProject != null ? currentProject.getName() : "Unknown") + "' withdrawn. Status set to PENDING_WITHDRAWAL."); //
+            System.out.println("Application for project '" + (currentProject != null ? currentProject.getName() : "Unknown") + "' withdrawn. Status set to PENDING_WITHDRAWAL."); // To look into - Shrey
             return true;
 
         } else {

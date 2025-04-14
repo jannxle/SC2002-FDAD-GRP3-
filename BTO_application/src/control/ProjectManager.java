@@ -167,7 +167,7 @@ public class ProjectManager {
     }
 
 
-    public boolean assignOfficerToProject(String projectName, String officerName) {
+    public boolean assignOfficerToProject(String projectName, String officerName) { //Is this method deprecated? - Shrey
     	Project project = findProjectByName(projectName);
     	if(project != null) {
             project.setOfficer(officerName);

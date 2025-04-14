@@ -69,8 +69,13 @@ public class OfficerRegistrationManager {
         System.out.println("Registration request submitted. Status: PENDING.");
         return true;
     }
+    
+/* EDGE CASE: - Shrey
+ * Officer registers to 2 projects with overlapping periods. 
+ * Each of the project managers individually approve, now he is registered in 2 different projects with overlapping period. 
+ */
 
-    public boolean approveRegistration(Manager approver, Officer officer) {
+    public boolean approveRegistration(Manager approver, Officer officer) { 
         for (Project project : officer.getRegisteredProjects()) {
             OfficerRegistrationStatus status = officer.getRegistrationStatusForProject(project);
             if (status == OfficerRegistrationStatus.PENDING && project.getManager().equalsIgnoreCase(approver.getName())) {

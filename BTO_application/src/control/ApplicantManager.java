@@ -14,6 +14,9 @@ import java.time.LocalDate;
  * applicant eligibility criteria (age, marital status, needed room types)
  * and project visibility/application period.
  */
+
+// Could this class just been stream expressions? - Shrey
+
 public class ApplicantManager {
 
     private ProjectManager projectManager;

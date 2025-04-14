@@ -40,7 +40,7 @@ public class BookingManager {
         }
 
         // 2. Check Applicant Status
-        if (applicant.getStatus() != ApplicationStatus.SUCCESSFUL) {
+        if (applicant.getStatus() != ApplicationStatus.SUCCESSFUL) { // Why is this method going to out instead of err? - Shrey
             System.out.println("Booking failed: Applicant '" + applicantNRIC + "' status must be SUCCESSFUL (Current: " + applicant.getStatus() + ")");
             return false;
         }
@@ -59,7 +59,7 @@ public class BookingManager {
         // Persist changes - Both Applicant and Project lists need saving
         applicantUserManager.saveUsers();
         applicationManager.saveApplications("data/Applications.csv", applicationManager.getAllApplicants());
-        projectManager.saveProjects("data/ProjectList.csv");
+        projectManager.saveProjects("data/ProjectList.csv"); // No changes seen here to save - Shrey
 
         System.out.println("Flat (" + chosenRoom + ") booked successfully by Officer " + bookingOfficer.getName() +
                                " for Applicant " + applicant.getNRIC() + " in project '" + project.getName() + "'. Status is now BOOKED.");
