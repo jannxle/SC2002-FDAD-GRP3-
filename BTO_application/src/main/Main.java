@@ -2,6 +2,8 @@ package main;
 
 import control.*;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -50,9 +52,16 @@ public class Main {
              projectManager.getProjects()
         );
 
-        System.out.println("Initialization complete. Starting Login...");
-        System.out.println("-----------------------------------------");
-
+        System.out.println("Initialization complete. Redirecting to Login Page...");
+        System.out.println();
+        System.out.println("-------------------------------------------------------------------");
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+        // Get the current date
+        LocalDate currentDate = LocalDate.now();
+        // Print the date at the start of the app
+        System.out.println("                                          Today's date: " + currentDate.format(formatter));
+        
+        System.out.println("-------------------------------------------------------------------");
         LoginManager loginManager = new LoginManager(
             applicantManager,
             applicantUserManager,
@@ -65,6 +74,7 @@ public class Main {
             bookingManager,
             reportManager
         );
+        loginManager.welcomeBanner();
 
         // --- Start the Application ---
         loginManager.login(); //
@@ -73,11 +83,12 @@ public class Main {
         System.out.println("\n-----------------------------------------");
         System.out.println("Exiting BTO Management System. Saving data...");
         applicantUserManager.saveUsers();
+        applicationManager.saveApplications("data/applications.csv", allApplicants);
         officerUserManager.saveUsers();
         managerUserManager.saveUsers();
         projectManager.saveProjects("data/ProjectList.csv");
-        enquiryManager.saveEnquiries();
+        enquiryManager.saveEnquiries("data/enquiries.csv");
 
-        System.out.println("Data saved. Goodbye!");
+        System.out.println("Goodbye!");
     }
 }

@@ -169,7 +169,18 @@ public class ApplicationManager {
           if (applicant == null || applicant.getStatus() != ApplicationStatus.PENDING) {
               System.err.println("Rejection failed: Applicant is null or status is not PENDING.");
               return false;
-         }
+          }
+          Project project = applicant.getAppliedProject();
+          RoomType roomType = applicant.getRoomChosen();
+          
+          if ( project != null && roomType != null) {
+              boolean success = projectManager.updateRoomAvailability(project, roomType, +1);
+              if (success) {
+                  System.out.println();
+              } else {
+                  System.err.println("Failed to restore room availability for " + roomType);
+              }
+          }
          // Set status to UNSUCCESSFUL
          applicant.setStatus(ApplicationStatus.UNSUCCESSFUL);
 
@@ -200,7 +211,6 @@ public class ApplicationManager {
             }
         }
         FileManager.writeFile(filePath, lines);
-         System.out.println("Application snapshot saved to " + filePath);
     }
 
 

@@ -60,7 +60,7 @@ public class ReportManager {
         String lineSeparator = System.lineSeparator();
 
         report.append("=============================================================================================").append(lineSeparator);
-        report.append("                         BTO Applicant Booking Report                                        ").append(lineSeparator);
+        report.append("                                 BTO Applicant Booking Report                                ").append(lineSeparator);
         if (criteria != null && criteria.hasFilters()) {
              report.append(" Filters Applied: ");
              if (criteria.getMaritalStatusFilter() != null) {

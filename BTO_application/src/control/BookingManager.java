@@ -83,9 +83,9 @@ public class BookingManager {
 
           // --- Receipt Formatting ---
           StringBuilder receipt = new StringBuilder();
-          receipt.append("------------------------------------------\n");
+          receipt.append("-------------------------------------------\n");
           receipt.append("        BTO Booking Confirmation\n");
-          receipt.append("------------------------------------------\n");
+          receipt.append("-------------------------------------------\n");
           receipt.append("Applicant Name: ").append(bookedApplicant.getName()).append("\n");
           receipt.append("Applicant NRIC: ").append(bookedApplicant.getNRIC()).append("\n");
           receipt.append("Age:            ").append(bookedApplicant.getAge()).append("\n");
@@ -101,9 +101,9 @@ public class BookingManager {
                     break;
                }
            }
-          receipt.append("------------------------------------------\n");
+          receipt.append("-------------------------------------------\n");
           receipt.append("Date Generated: ").append(LocalDate.now().format(java.time.format.DateTimeFormatter.ISO_LOCAL_DATE)).append("\n");
-          receipt.append("------------------------------------------\n");
+          receipt.append("-------------------------------------------\n");
 
 
           return receipt.toString();

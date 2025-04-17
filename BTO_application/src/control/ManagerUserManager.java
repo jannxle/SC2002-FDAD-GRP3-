@@ -36,7 +36,6 @@ public class ManagerUserManager implements UserManager<Manager> {
                 e.printStackTrace();
             }
         }
-         System.out.println("Manager data loaded from " + FILE_PATH);
     }
 
     @Override
@@ -54,7 +53,6 @@ public class ManagerUserManager implements UserManager<Manager> {
             );
         }
         FileManager.writeFile(FILE_PATH, lines);
-        System.out.println("Manager data saved to " + FILE_PATH);
     }
 
     @Override
@@ -78,10 +76,8 @@ public class ManagerUserManager implements UserManager<Manager> {
         if (user != null) {
             if (user.changePass(newPassword)) {
                 saveUsers();
-                System.out.println("Password changed successfully for Manager: " + nric);
                 return true;
             } else {
-                System.err.println("Password validation failed for Manager: " + nric);
                 return false;
             }
         }

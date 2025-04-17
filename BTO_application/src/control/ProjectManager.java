@@ -6,6 +6,7 @@ import entities.Room;
 import enums.RoomType;
 import utils.FileManager;
 
+import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
@@ -30,6 +31,11 @@ public class ProjectManager {
                 // Delegate parsing to the Project class itself for better encapsulation
                 Project p = Project.fromCSV(line);
                 if (p != null) {
+                	//Update visibility, if not active return True
+                	if (!isProjectActive(p)) {
+                		p.setVisibility(false);
+                		System.out.println("Project " + p.getName() + " visibility set to false as it is outside date range.");
+                	}
                     projects.add(p);
                 } else {
                     System.err.println("Skipping line due to parsing error (Project.fromCSV returned null): " + line);
@@ -46,12 +52,12 @@ public class ProjectManager {
             }
         }
          System.out.println("Project data loaded from " + filePath);
+         saveProjects(FILE_PATH);
     }
 
     public boolean addProject(Project project) {
         if (project != null && findProjectByName(project.getName()) == null) {
              projects.add(project);
-             System.out.println("Project '" + project.getName() + "' added to memory.");
              return true;
         } else if (project == null) {
              System.err.println("Cannot add a null project.");
@@ -85,16 +91,29 @@ public class ProjectManager {
             lines.add(toCSV(p));
         }
         FileManager.writeFile(filePath, lines);
-        System.out.println("Project data saved to " + filePath);
     }
 
+    //Check if project is active based on dates
+    private boolean isProjectActive(Project project) {
+    	LocalDate today = LocalDate.now();
+    	if (project.getOpenDate()== null || project.getCloseDate()==null) {
+    		return true; //default visible if dates not specified
+    	}
+    	//if within open and close dates -> return True
+    	return !today.isBefore(project.getOpenDate()) && !today.isAfter(project.getCloseDate());
+    }
+    
     public boolean setProjectVisibility(String projectName, boolean visible) {
         Project p = findProjectByName(projectName);
         if (p != null) {
             p.setVisibility(visible);
-            System.out.println("Visibility for project '" + projectName + "' set to " + visible + " in memory.");
-            return true;
-        }
+            System.out.println("Visibility for project '" + projectName + "' set to " + visible );
+        
+	        saveProjects(FILE_PATH);
+	        
+	        return true;
+    	}
+    
          System.err.println("Project '" + projectName + "' not found for visibility toggle.");
         return false;
     }
@@ -105,7 +124,6 @@ public class ProjectManager {
              Project p = iterator.next();
              if (p.getName().equalsIgnoreCase(projectName)) {
                  iterator.remove();
-                 System.out.println("Project '" + projectName + "' removed from memory.");
                  return true;
              }
          }
@@ -159,7 +177,7 @@ public class ProjectManager {
                 }
 
                 if (success && change != 0) {
-                    System.out.println("Room availability updated in memory.");
+                	System.out.println();
                 }
 
                 return success;
@@ -174,7 +192,7 @@ public class ProjectManager {
     	Project project = findProjectByName(projectName);
     	if(project != null) {
             project.setOfficer(officerName);
-            System.out.println("Officer '" + (officerName == null ? "<none>" : officerName) + "' assigned to project '" + projectName + "' in memory.");
+            System.out.println("Officer '" + (officerName == null ? "<none>" : officerName) + "' assigned to project '" + projectName);
             return true;
         }
         System.err.println("Project '" + projectName + "' not found for officer assignment.");

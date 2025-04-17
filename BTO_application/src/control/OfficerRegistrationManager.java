@@ -95,7 +95,7 @@ public class OfficerRegistrationManager {
     public boolean rejectRegistration(Manager rejector, Officer officer) {
         for (Project project : officer.getRegisteredProjects()) {
             OfficerRegistrationStatus status = officer.getRegistrationStatusForProject(project);
-            if (status == OfficerRegistrationStatus.PENDING && project.getManager().equalsIgnoreCase(rejector.getNRIC())) {
+            if (status == OfficerRegistrationStatus.PENDING && project.getManager().equalsIgnoreCase(rejector.getName())) {
                 officer.updateRegistrationStatus(project, OfficerRegistrationStatus.REJECTED);
                 officerUserManager.saveUsers();
                 System.out.println("Officer " + officer.getName() + " rejected for project '" + project.getName() + "'.");

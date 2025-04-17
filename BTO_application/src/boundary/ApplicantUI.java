@@ -5,6 +5,7 @@ import java.util.InputMismatchException;
 import java.util.List;
 import java.util.Scanner;
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 
 import auth.LoginManager;
 import control.ApplicantManager;
@@ -87,6 +88,7 @@ public class ApplicantUI {
                 case 3: 
                 	applyForProject(); 
                 	applicationManager.saveApplications("data/Applications.csv", applicantUserManager.getUsers());
+                	projectManager.saveProjects("data/ProjectList.csv");
                 	break;
                 case 4: viewApplicationStatus(); break;
                 case 5: withdrawApplication(); break;
@@ -113,7 +115,7 @@ public class ApplicantUI {
     // --- Helper Methods for Menu Actions ---
 
     protected void changePassword() {
-         System.out.println("--- Change Password ---");
+         System.out.println("============= Change Password =============");
          System.out.print("Enter current password: ");
          String currentPassword = scanner.nextLine();
 
@@ -126,7 +128,8 @@ public class ApplicantUI {
         String newPassword = scanner.nextLine();
         
         if (newPassword.length() < 8) {
-            System.out.println("New password must be at least 8 characters long.");
+        	System.out.println();
+            System.out.println("Password must be at least 8 characters long.");
             return;
         }
         
@@ -144,13 +147,14 @@ public class ApplicantUI {
 
         if (success) {
              System.out.println("Password changed successfully.");
+             loginManager.login();
         } else {
              System.out.println("Password change failed. Please check requirements or try again.");
         }
     }
 
     protected void viewAvailableProjects() {
-        System.out.println("--- Available BTO Projects ---");
+        System.out.println("========== Available BTO Projects ====================================================================");
         List<Project> projects = applicantManager.getAvailableProjects(this.applicant);
 
         if (projects.isEmpty()) {
@@ -160,37 +164,56 @@ public class ApplicantUI {
         displayProjectListWithRooms(projects);
     }
 
-     protected void displayProjectListWithRooms(List<Project> projects) {
-         System.out.println("-------------------------------------------------------------------------");
-         System.out.printf(" %-25s | %-15s | %s%n", "Project Name", "Neighbourhood", "Available Room Types (Units Available)");
-         System.out.println("-------------------------------------------------------------------------");
-         if (projects.isEmpty()) {
-             System.out.println("                  < No Projects Found >");
-         } else {
-             for (Project p : projects) {
-                 StringBuilder roomInfo = new StringBuilder();
-                 if (p.getRooms() != null && !p.getRooms().isEmpty()) {
-                     boolean firstRoom = true;
-                     for (Room r : p.getRooms()) {
-                          if (!firstRoom) roomInfo.append(", ");
-                          roomInfo.append(r.getRoomType().name())
-                                  .append(" (")
-                                  .append(r.getAvailableRooms())
-                                  .append(")");
-                          firstRoom = false;
-                     }
-                 } else {
-                      roomInfo.append("<No room info>");
-                 }
-                 System.out.printf(" %-25s | %-15s | %s%n", p.getName(), p.getNeighbourhood(), roomInfo.toString());
-             }
-         }
-         System.out.println("-------------------------------------------------------------------------");
-     }
+    protected void displayProjectListWithRooms(List<Project> projects) {
+
+        String divider = "------------------------------------------------------------------------------------------------------";
+        String formatStr = " %-20s | %-15s | %-30s | %-10s | %-10s%n";
+        
+        System.out.println(divider);
+        System.out.printf(formatStr,
+                "Project Name", "Neighbourhood", "Room Types (Units Available)", "Open Date", "Close Date");
+        System.out.println(divider);
+        
+        if (projects.isEmpty()) {
+            System.out.println(" < No Projects Found >");
+        } else {
+            // Format dates with DateTimeFormatter for consistent display
+            DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd-MM-yy"); // Changed YY to yy for standard format
+            
+            for (Project p : projects) {
+                StringBuilder roomInfo = new StringBuilder();
+                if (p.getRooms() != null && !p.getRooms().isEmpty()) {
+                    boolean firstRoom = true;
+                    for (Room r : p.getRooms()) {
+                        if (!firstRoom) roomInfo.append(", ");
+                        roomInfo.append(r.getRoomType().name())
+                               .append(" (")
+                               .append(r.getAvailableRooms())
+                               .append(")");
+                        firstRoom = false;
+                    }
+                } else {
+                    roomInfo.append("<No room info>");
+                }
+                
+                // Format dates
+                String openDate = p.getOpenDate() != null ? p.getOpenDate().format(dateFormatter) : "N/A";
+                String closeDate = p.getCloseDate() != null ? p.getCloseDate().format(dateFormatter) : "N/A";
+                
+                System.out.printf(formatStr,
+                        p.getName(),
+                        p.getNeighbourhood(),
+                        roomInfo.toString(),
+                        openDate,
+                        closeDate);
+            }
+        }
+        System.out.println("======================================================================================================");
+    }
 
 
     protected void applyForProject() {
-        System.out.println("--- Apply for BTO Project ---");
+        System.out.println("========== Apply for BTO Projects ====================================================================");
         // Cannot apply if PENDING, SUCCESSFUL, BOOKED
         if (applicant.getStatus() != null && applicant.getStatus() != ApplicationStatus.UNSUCCESSFUL) {
             System.out.println("You already have an active or successful application (Status: " + applicant.getStatus() + ").");
@@ -281,7 +304,7 @@ public class ApplicantUI {
      } else {
          System.out.println("Application submission failed.");
      }
-     projectManager.saveProjects("data/ProjectList.csv");
+     
     }
 
      private List<RoomType> getEligibleRoomTypesForProject(Applicant applicant, Project project) {
@@ -303,7 +326,7 @@ public class ApplicantUI {
 
 
     protected void viewApplicationStatus() {
-        System.out.println("--------- My Application Status ---------");
+        System.out.println("========== My Application Status ==========");
         displayApplicantApplicationStatus(this.applicant);
     }
 
@@ -312,11 +335,12 @@ public class ApplicantUI {
          ApplicationStatus status = applicantForStatus.getStatus();
 
          if (appliedProject != null && status != null && status != ApplicationStatus.UNSUCCESSFUL) {
-        	 System.out.println("---------------------------------------");
+        	 System.out.println("-------------------------------------------");
              System.out.println("Current Application Details:");
              System.out.println("Project:     " + appliedProject.getName());
              System.out.println("Chosen Room: " + (applicantForStatus.getRoomChosen() != null ? applicantForStatus.getRoomChosen() : "N/A"));
              System.out.println("Status:      " + status);
+             System.out.println();
              switch (status) {
                  case PENDING: System.out.println(">>> Your application is pending review by HDB."); break;
                  case SUCCESSFUL: System.out.println(">>> Congratulations! Your application is successful.\n     Please contact an HDB Officer to book your flat."); break;
@@ -337,7 +361,7 @@ public class ApplicantUI {
     }
 
     protected void withdrawApplication() {
-        System.out.println("---------- Withdraw Application ----------");
+        System.out.println("=========== Withdraw Application ==========");
 
         ApplicationStatus currentStatus = applicant.getStatus();
         Project currentProject = applicant.getAppliedProject();
@@ -373,7 +397,7 @@ public class ApplicantUI {
     }
 
     protected void submitEnquiry() {
-        System.out.println("========Submit Enquiry========");
+        System.out.println("============= Submit Enquiry ==============");
         
         List<Project> allProjects = projectManager.getProjects();
         if (allProjects == null || allProjects.isEmpty()) {
@@ -385,10 +409,12 @@ public class ApplicantUI {
         for (int i = 0; i < allProjects.size(); i++) {
             System.out.printf(" %d. %s (%s)\n", i + 1, allProjects.get(i).getName(), allProjects.get(i).getNeighbourhood());
         }
-        System.out.println("-------------------------------");
+        System.out.println("-------------------------------------------");
         System.out.print("Select the project you want to enquiry about (Enter 0 to exit): ");
         int projectChoice = scanner.nextInt();
-
+        scanner.nextLine();
+        
+        
         if (projectChoice < 1 || projectChoice > allProjects.size()) {
             System.out.println("Invalid selection.");
             System.out.println();
@@ -417,21 +443,21 @@ public class ApplicantUI {
         }
 
         System.out.println("Your Submitted Enquiries:");
-        System.out.println("-------------------------------------------------");
+        System.out.println("-------------------------------------------");
         for (int i = 0; i < myEnquiries.size(); i++) {
             Enquiry e = myEnquiries.get(i);
             System.out.println("Enquiry #" + (i + 1));
-            System.out.println(" Project: " + e.getProjectName());
-            System.out.println(" Message: " + e.getMessage());
+            System.out.println("    Project: " + e.getProjectName());
+            System.out.println("    Message: " + e.getMessage());
             if (e.getReply() == null || e.getReply().isEmpty()) {
-                System.out.println(" Reply:     <No Reply Yet>");
+                System.out.println("    Reply:     <No Reply Yet>");
             } else {
                 System.out.println(" Reply:     " + e.getReply());
                 System.out.println(" Replied By:" + (e.getReplyingOfficer() != null && !e.getReplyingOfficer().isEmpty()
                     ? " " + e.getReplyingOfficer()
                     : " <Unknown>"));
             }
-            System.out.println("-------------------------------------------------");
+            System.out.println("-------------------------------------------");
         }
 
         System.out.print("Select enquiry # to Edit or Delete (Enter 0 to cancel): ");
@@ -455,11 +481,13 @@ public class ApplicantUI {
             return;
         }
 
-        System.out.println("Action for Enquiry #" + choice + ":");
+        System.out.println();
+        System.out.println("Actions for Enquiry" + choice + " :");
+        System.out.println("-------------------------------------------");
         System.out.println("1. Edit Message");
         System.out.println("2. Delete Enquiry");
         System.out.println("0. Cancel");
-        System.out.print("Enter choice: ");
+        System.out.print("What would you like to do for your enquiry? : ");
         int actionChoice = -1;
         try {
              actionChoice = scanner.nextInt();
@@ -492,14 +520,14 @@ public class ApplicantUI {
     }
 
      protected void viewApplicantProfile() {
-        System.out.println("========== Applicant Profile ==========");
+        System.out.println("=========== Applicant Profile ==============");
         System.out.println(" Name:           " + applicant.getName());
         System.out.println(" NRIC:           " + applicant.getNRIC());
         System.out.println(" Age:            " + applicant.getAge());
         System.out.println(" Marital Status: " + (applicant.isMarried() ? "Married" : "Single"));
         System.out.println(" Role:           " + applicant.getRole());
         displayApplicantApplicationStatus(applicant);
-        System.out.println("===================================");
+        System.out.println("============================================");
     }
 
      private boolean isValidNRIC(String nric) {

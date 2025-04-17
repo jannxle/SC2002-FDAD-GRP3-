@@ -81,6 +81,22 @@ public class Project {
 	public void setRooms(List<Room> rooms) {
 	    this.rooms = rooms;
 	}	
+	public int getRoomCount(RoomType type) {
+	    for (Room room : rooms) {
+	        if (room.getRoomType() == type) {
+	            return room.getAvailableRooms();
+	        }
+	    }
+	    return 0; // If room type not found
+	}
+	public void setRoomCount(RoomType type, int count) {
+	    for (Room room : rooms) {
+	        if (room.getRoomType() == type) {
+	            room.setAvailableRooms(count);
+	            return;
+	        }
+	    }
+	}
 	public boolean isVisibility() {
 		return visibility;
 	}
@@ -133,8 +149,7 @@ public class Project {
         Room room2 = new Room(roomType2, numUnitsType2, priceType2);
         List<Room> rooms = List.of(room1, room2);
 
-        boolean visibility = true; // default or parse from CSV if you have a column for it.
-        
+        boolean visibility = Boolean.parseBoolean(parts[13].trim()); // default or parse from CSV if you have a column for it.
         
         return new Project(projectName, neighborhood, openDate, closeDate, manager, officerSlot, rooms, visibility, officer);
   

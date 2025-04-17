@@ -68,7 +68,6 @@ public class OfficerUserManager implements UserManager<Officer> {
                 e.printStackTrace();
             }
         }
-        System.out.println("Officer data loaded from " + FILE_PATH);
     }
 
     @Override
@@ -97,7 +96,6 @@ public class OfficerUserManager implements UserManager<Officer> {
             ));
         }
         FileManager.writeFile(FILE_PATH, lines);
-        System.out.println("Officer data saved to " + FILE_PATH);
     }
 
     @Override
@@ -121,10 +119,8 @@ public class OfficerUserManager implements UserManager<Officer> {
         if (user != null) {
             if (user.changePass(newPassword)) {
                 saveUsers();
-                 System.out.println("Password changed successfully for Officer: " + nric);
                 return true;
             } else {
-                 System.err.println("Password validation failed for Officer: " + nric);
                  return false;
             }
         }

@@ -52,6 +52,17 @@ public class LoginManager {
         this.bookingManager = bookingManager;
         this.reportManager = reportManager;
 	}
+	
+	public static void welcomeBanner() {
+		System.out.println(" #######  #########  #######       #######   #######   #######  ");
+		System.out.println(" ##    ##    ##     ##     ##     ##     ## ##     ## ##     ## ");
+		System.out.println(" ##    ##    ##     ##     ##     ##     ## ##     ## ##     ## ");
+		System.out.println(" #######     ##     ##     ##     ##     ## ##     ## ##     ## ");
+		System.out.println(" ##    ##    ##     ##     ##     ## ### ## ########  ########  ");
+		System.out.println(" ##    ##    ##     ##     ##     ##     ## ##        ##        ");
+		System.out.println(" #######     ##      #######      ##     ## ##        ##        ");
+		System.out.println("-------------------------------------------------------------------");
+	}
 
     private boolean isValidNRIC(String nric) {
         if (nric == null) return false;
@@ -64,7 +75,8 @@ public class LoginManager {
         User authenticatedUser = null;
 
 		while (!loggedIn) {
-			System.out.println("\n---- BTO Management System Login ----");
+			System.out.println("\n");
+			System.out.println("=============== Login Page ===============");
 			System.out.print("Enter NRIC: ");
 			String inputNRIC = scanner.nextLine().trim().toUpperCase();
 
@@ -72,7 +84,8 @@ public class LoginManager {
 				System.out.println("Invalid NRIC format. Please try again (e.g., S1234567A).");
 				continue;
 			}
-
+			
+			System.out.println();
 			System.out.print("Enter Password: ");
 			String inputPassword = scanner.nextLine();
 			System.out.println();

@@ -55,7 +55,6 @@ public class EnquiryManager {
                  e.printStackTrace();
             }
         }
-        System.out.println("Enquiry data loaded from " + filePath);
     }
 
     public void saveEnquiries() {
@@ -76,7 +75,6 @@ public class EnquiryManager {
             ));
         }
         FileManager.writeFile(filePath, lines);
-        System.out.println("Enquiry data saved to " + filePath);
     }
 
     public void submitEnquiry(Enquiry enquiry) {
