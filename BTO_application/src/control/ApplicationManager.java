@@ -134,68 +134,117 @@ public class ApplicationManager {
         }
     }
 
-
-    // --- Methods typically called by HDB Manager ---
     public boolean approveApplication(Applicant applicant) {
-         if (applicant == null || applicant.getStatus() != ApplicationStatus.PENDING) {
-              System.err.println("Approval failed: Applicant is null or status is not PENDING.");
-              return false;
-         }
-
-         Project project = applicant.getAppliedProject();
-         RoomType chosenRoom = applicant.getRoomChosen();
-         if (project == null || chosenRoom == null) {
-             System.err.println("Approval failed: Project or chosen room data missing for applicant.");
+        if (applicant == null || applicant.getStatus() != ApplicationStatus.PENDING) {
+             System.err.println("Approval failed: Applicant is null or status is not PENDING.");
              return false;
-         }
-         
-         if (project.getManager() == null || project.getManager().trim().isEmpty()) {
-             System.err.println("Approval failed: Project '" + project.getName() + "' does not have a manager assigned.");
-             return false;
-         }
+        }
 
-         applicant.setStatus(ApplicationStatus.SUCCESSFUL);
-         if (applicantUserManager != null) {
-              applicantUserManager.saveUsers();
-              System.out.println("Application approved for Applicant " + applicant.getNRIC());
-              return true;
-         } else {
-              System.err.println("Warning: ApplicantUserManager not set. Cannot save applicant state automatically.");
-              return false;
-         }
-    }
+        Project project = applicant.getAppliedProject();
+        RoomType chosenRoom = applicant.getRoomChosen();
+        if (project == null || chosenRoom == null) {
+            System.err.println("Approval failed: Project or chosen room data missing for applicant.");
+            return false;
+        }
+
+        boolean updated = projectManager.updateRoomAvailability(project, chosenRoom, -1);
+        if (!updated) {
+             System.err.println("CRITICAL: Failed to decrement available room count for " + chosenRoom + " in project " + project.getName() + " during approval.");
+        }
+
+        applicant.setStatus(ApplicationStatus.SUCCESSFUL);
+        saveApplicantUserState(applicant);
+
+        System.out.println("Application approved for Applicant " + applicant.getNRIC() + ". Status set to SUCCESSFUL.");
+
+        return true;
+   }
 
     public boolean rejectApplication(Applicant applicant) {
           if (applicant == null || applicant.getStatus() != ApplicationStatus.PENDING) {
               System.err.println("Rejection failed: Applicant is null or status is not PENDING.");
               return false;
           }
-          Project project = applicant.getAppliedProject();
-          RoomType roomType = applicant.getRoomChosen();
-          
-          if ( project != null && roomType != null) {
-              boolean success = projectManager.updateRoomAvailability(project, roomType, +1);
-              if (success) {
-                  System.out.println();
-              } else {
-                  System.err.println("Failed to restore room availability for " + roomType);
-              }
-          }
-         // Set status to UNSUCCESSFUL
-         applicant.setStatus(ApplicationStatus.UNSUCCESSFUL);
 
-         if (applicantUserManager != null) {
-              applicantUserManager.saveUsers();
-               System.out.println("Application rejected for Applicant " + applicant.getNRIC() + ". Status set to UNSUCCESSFUL.");
-              return true;
-         } else {
-              System.err.println("Warning: ApplicantUserManager not set. Cannot save applicant state automatically.");
-              return false;
-         }
+         applicant.setStatus(ApplicationStatus.UNSUCCESSFUL);
+         applicant.setAppliedProject(null);
+         applicant.setRoomChosen(null);
+
+         saveApplicantUserState(applicant);
+
+         System.out.println("Application rejected for Applicant " + applicant.getNRIC() + ". Status set to UNSUCCESSFUL.");
+
+         return true;
+    }
+
+    public boolean approveWithdrawal(Applicant applicant) {
+        if (applicant == null || applicant.getStatus() != ApplicationStatus.PENDING_WITHDRAWAL) {
+            System.err.println("Withdrawal approval failed: Applicant is null or status is not PENDING_WITHDRAWAL.");
+            return false;
+        }
+
+        Project project = applicant.getAppliedProject();
+        RoomType room = applicant.getRoomChosen();
+        boolean unitReturned = false;
+
+        if (project != null && room != null) {
+            unitReturned = projectManager.updateRoomAvailability(project, room, +1);
+            if (!unitReturned) {
+                System.err.println("Warning: Failed to increment room availability during withdrawal approval for NRIC " + applicant.getNRIC());
+            }
+        }
+
+        applicant.setAppliedProject(null);
+        applicant.setRoomChosen(null);
+        applicant.setStatus(null);
+
+        saveApplicantUserState(applicant);
+
+        System.out.println("Withdrawal approved for NRIC " + applicant.getNRIC() + ". Application details cleared.");
+        return true;
+    }
+
+    public boolean rejectWithdrawal(Applicant applicant) {
+         if (applicant == null || applicant.getStatus() != ApplicationStatus.PENDING_WITHDRAWAL) {
+            System.err.println("Withdrawal rejection failed: Applicant is null or status is not PENDING_WITHDRAWAL.");
+            return false;
+        }
+        applicant.setStatus(ApplicationStatus.SUCCESSFUL);
+        saveApplicantUserState(applicant);
+        System.out.println("Withdrawal rejected for NRIC " + applicant.getNRIC() + ". Status reverted to " + applicant.getStatus() + ".");
+        return true;
+    }
+
+
+    private void saveApplicantUserState(Applicant applicant) {
+         if (applicant instanceof Officer) {
+             if (officerUserManager != null) {
+                 officerUserManager.saveUsers();
+             } else {
+                  System.err.println("Warning: OfficerUserManager not set. Cannot save officer state.");
+             }
+        } else {
+             if (applicantUserManager != null) {
+                 applicantUserManager.saveUsers();
+             } else {
+                 System.err.println("Warning: ApplicantUserManager not set. Cannot save applicant state.");
+             }
+        }
+        saveApplications(APPLICATIONS_FILE_PATH, getAllApplicants());
+    }
+
+    public boolean updateAndSaveApplicantStatus(Applicant applicant, ApplicationStatus newStatus) {
+        if (applicant == null) {
+             System.err.println("Cannot update status for null applicant.");
+             return false;
+        }
+        applicant.setStatus(newStatus);
+        saveApplicantUserState(applicant);
+        System.out.println("Applicant " + applicant.getNRIC() + " status updated to " + newStatus + " and state saved.");
+        return true;
     }
 
     // Load/Save for Applications.csv
-
     public void saveApplications(String filePath, List<Applicant> applicants) {
         List<String> lines = new ArrayList<>();
         lines.add("NRIC,Name,ProjectName,RoomType,Status");

@@ -293,17 +293,11 @@ public class ApplicantUI {
      // Proceed with application
      boolean success = applicationManager.apply(this.applicant, selectedProject, chosenRoom);
 
-     // Decrement room availability only if application succeeded
      if (success) {
-         boolean updated = projectManager.updateRoomAvailability(selectedProject, chosenRoom, -1);
-         if (!updated) {
-             System.err.println("Application recorded, but failed to update room availability.");
-         } else {
-             System.out.println("Application submitted successfully. Room availability updated.");
-         }
-     } else {
+        System.out.println("Application submitted successfully. Status is PENDING.");
+    } else {
          System.out.println("Application submission failed.");
-     }
+    }
      
     }
 

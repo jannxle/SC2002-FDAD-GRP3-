@@ -86,7 +86,7 @@ public class ProjectManager {
 
     public void saveProjects(String filePath) {
         List<String> lines = new ArrayList<>();
-         lines.add("Project Name,Neighbourhood,Type 1,Num Units 1,Price 1,Type 2,Num Units 2,Price 2,Open Date,Close Date,Manager Name,Officer Slots,Officer Name,Visibility");
+        lines.add("Project Name,Neighbourhood,Type 1,Num Units 1,Available Units 1,Price 1,Type 2,Num Units 2,Available Units 2,Price 2,Open Date,Close Date,Manager Name,Officer Slots,Officer Name,Visibility");
         for (Project p : projects) {
             lines.add(toCSV(p));
         }
@@ -131,61 +131,61 @@ public class ProjectManager {
          return false;
     }
 
-
     public boolean updateRoomAvailability(Project project, RoomType roomType, int change) {
         if (project == null) {
              System.err.println("Cannot update room availability for a null project.");
              return false;
         }
-        
-        for (Project p : projects) {
-            if (p.getName().equalsIgnoreCase(project.getName())) {
-                Room targetRoom = null;
-                for (Room r : project.getRooms()) {
-                    if (r.getRoomType() == roomType) {
-                        targetRoom = r;
-                        break;
-                    }
-                }
 
-                if (targetRoom == null) {
-                    System.err.println("Room type " + roomType + " not found in project '" + project.getName() + "'.");
-                    return false;
-                }
+        Project managedProject = findProjectByName(project.getName());
+        if (managedProject == null) {
+             System.err.println("Project '" + project.getName() + "' not found in ProjectManager's list.");
+             return false;
+        }
 
-                boolean success = false;
-                if (change < 0) {
-                    success = true;
-                    for (int i = 0; i < -change; i++) {
-                        if (!targetRoom.decrementAvailableRooms()) {
-                            System.err.println("Failed to decrement available rooms.");
-                            success = false;
-                            break;
-                        }
-                    }
-                } else if (change > 0) {
-                    success = true;
-                    for (int i = 0; i < change; i++) {
-                        if (!targetRoom.incrementAvailableRooms()) {
-                            System.err.println("Failed to increment available rooms.");
-                            success = false;
-                            break;
-                        }
-                    }
-                } else {
-                    success = true;
-                }
 
-                if (success && change != 0) {
-                	System.out.println();
-                }
-
-                return success;
+        Room targetRoom = null;
+        for (Room r : managedProject.getRooms()) {
+            if (r.getRoomType() == roomType) {
+                targetRoom = r;
+                break;
             }
         }
 
-        System.err.println("Project not found in project list.");
-        return false;
+        if (targetRoom == null) {
+            System.err.println("Room type " + roomType + " not found in project '" + managedProject.getName() + "'.");
+            return false;
+        }
+
+        boolean success = false;
+        if (change < 0) { // Decrement
+            success = true;
+            for (int i = 0; i < -change; i++) {
+                if (!targetRoom.decrementAvailableRooms()) {
+                    success = false;
+                    break;
+                }
+            }
+        } else if (change > 0) { // Increment
+            success = true;
+            for (int i = 0; i < change; i++) {
+                if (!targetRoom.incrementAvailableRooms()) {
+                    success = false;
+                    break;
+                }
+            }
+        } else { // change == 0
+            success = true;
+        }
+
+        if (success && change != 0) {
+            System.out.println("Available units for " + roomType + " in project '" + managedProject.getName() + "' updated. New count: " + targetRoom.getAvailableRooms());
+            saveProjects(FILE_PATH);
+        } else if (!success && change !=0 ){
+             System.out.println("Update to available units failed for " + roomType + " in project '" + managedProject.getName() + "'. Count remains: " + targetRoom.getAvailableRooms());
+        }
+
+        return success;
     }
 
     public boolean assignOfficerToProject(String projectName, String officerName) {
@@ -202,27 +202,28 @@ public class ProjectManager {
     private String toCSV(Project p) {
         if (p == null) return "";
         List<Room> rooms = p.getRooms();
-        String type1 = "", units1 = "", price1 = "";
-        String type2 = "", units2 = "", price2 = "";
+        String type1 = "", totalUnits1 = "0", availUnits1 = "0", price1 = "0.0";
+        String type2 = "", totalUnits2 = "0", availUnits2 = "0", price2 = "0.0";
 
-        if (rooms != null && !rooms.isEmpty()) {
-             Room r1 = rooms.get(0);
-             type1 = r1.getRoomType() != null ? r1.getRoomType().name() : "";
-             units1 = String.valueOf(r1.getAvailableRooms());
-             price1 = String.valueOf(r1.getPrice());
-             if (rooms.size() >= 2) {
-                Room r2 = rooms.get(1);
-                type2 = r2.getRoomType() != null ? r2.getRoomType().name() : "";
-                units2 = String.valueOf(r2.getAvailableRooms());
-                price2 = String.valueOf(r2.getPrice());
-             }
+        if (rooms != null) {
+            for(Room r : rooms) {
+                 if (r.getRoomType() == RoomType.TwoRoom) {
+                     type1 = r.getRoomType().name();
+                     totalUnits1 = String.valueOf(r.getTotalRooms());
+                     availUnits1 = String.valueOf(r.getAvailableRooms());
+                     price1 = String.valueOf(r.getPrice());
+                 } else if (r.getRoomType() == RoomType.ThreeRoom) {
+                     type2 = r.getRoomType().name();
+                     totalUnits2 = String.valueOf(r.getTotalRooms());
+                     availUnits2 = String.valueOf(r.getAvailableRooms());
+                     price2 = String.valueOf(r.getPrice());
+                 }
+            }
         }
 
-        // Format dates using the defined formatter
         String openDateStr = p.getOpenDate() != null ? p.getOpenDate().format(DATE_FORMATTER) : "";
         String closeDateStr = p.getCloseDate() != null ? p.getCloseDate().format(DATE_FORMATTER) : "";
 
-        // Get other fields, handling potential nulls
         String managerName = p.getManager() != null ? p.getManager() : "";
         String officerName = p.getOfficer() != null ? p.getOfficer() : "";
         String visibility = String.valueOf(p.isVisibility());
@@ -230,8 +231,14 @@ public class ProjectManager {
         return String.join(",",
                 escapeCsvField(p.getName()),
                 escapeCsvField(p.getNeighbourhood()),
-                escapeCsvField(type1), units1, price1,
-                escapeCsvField(type2), units2, price2,
+                escapeCsvField(type1),
+                totalUnits1,
+                availUnits1,
+                price1,
+                escapeCsvField(type2),
+                totalUnits2,
+                availUnits2,
+                price2,
                 escapeCsvField(openDateStr),
                 escapeCsvField(closeDateStr),
                 escapeCsvField(managerName),
@@ -240,6 +247,7 @@ public class ProjectManager {
                 visibility
         );
     }
+
 
 
     private String escapeCsvField(String field) {

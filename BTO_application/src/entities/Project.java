@@ -2,7 +2,9 @@ package entities;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.List;
+import java.util.ArrayList;
 
 import enums.RoomType;
 
@@ -112,47 +114,59 @@ public class Project {
 	    }
 	}
 	
-	
     public static Project fromCSV(String csvLine) {
-        // CSV format:
-        // Project Name, Neighbourhood, Type 1, Number of units for Type 1, 
-        // Selling price for Type 1, Type 2, Number of units for Type 2, 
-        // Selling price for Type 2, Application opening date, 
-        // Application closing date, Manager, Officer Slot, Officer
         String[] parts = csvLine.split(",");
-        if (parts.length < 13) {
-            throw new IllegalArgumentException("Not enough columns in CSV line.");
+        if (parts.length < 16) {
+            System.err.println("Skipping line: Not enough columns in CSV line. Expected 16, got " + parts.length + ". Line: " + csvLine);
+            return null;
         }
 
-        String projectName = parts[0].trim();
-        String neighborhood = parts[1].trim();
-        // parse room1
-        String type1Str = parts[2].trim();
-        RoomType roomType1 = type1Str.equalsIgnoreCase("TwoRoom") ? RoomType.TwoRoom : RoomType.ThreeRoom;
-        int numUnitsType1 = Integer.parseInt(parts[3].trim());
-        double priceType1 = Double.parseDouble(parts[4].trim());
-        // parse room2
-        String type2Str = parts[5].trim();
-        RoomType roomType2 = type2Str.equalsIgnoreCase("TwoRoom") ? RoomType.TwoRoom : RoomType.ThreeRoom;
-        int numUnitsType2 = Integer.parseInt(parts[6].trim());
-        double priceType2 = Double.parseDouble(parts[7].trim());
-        // parse dates
-        LocalDate openDate = LocalDate.parse(parts[8].trim(), dtf);
-        LocalDate closeDate = LocalDate.parse(parts[9].trim(), dtf);
-        
-        String manager = parts[10].trim();
-        int officerSlot = Integer.parseInt(parts[11].trim());
-        String officer = parts[12].trim();
+        try {
+            String projectName = parts[0].trim();
+            String neighborhood = parts[1].trim();
 
-        // create two Room objects
-        Room room1 = new Room(roomType1, numUnitsType1, priceType1);
-        Room room2 = new Room(roomType2, numUnitsType2, priceType2);
-        List<Room> rooms = List.of(room1, room2);
+            List<Room> rooms = new ArrayList<>();
 
-        boolean visibility = Boolean.parseBoolean(parts[13].trim()); // default or parse from CSV if you have a column for it.
-        
-        return new Project(projectName, neighborhood, openDate, closeDate, manager, officerSlot, rooms, visibility, officer);
-  
+            String type1Str = parts[2].trim();
+            if (!type1Str.isEmpty()) {
+                 RoomType roomType1 = RoomType.valueOf(type1Str);
+                 int numUnitsType1 = Integer.parseInt(parts[3].trim());
+                 int availUnitsType1 = Integer.parseInt(parts[4].trim());
+                 double priceType1 = Double.parseDouble(parts[5].trim());
+                 rooms.add(new Room(roomType1, numUnitsType1, availUnitsType1, priceType1));
+            }
+
+             String type2Str = parts[6].trim();
+            if (!type2Str.isEmpty()) {
+                RoomType roomType2 = RoomType.valueOf(type2Str);
+                int numUnitsType2 = Integer.parseInt(parts[7].trim());
+                int availUnitsType2 = Integer.parseInt(parts[8].trim());
+                double priceType2 = Double.parseDouble(parts[9].trim());
+                rooms.add(new Room(roomType2, numUnitsType2, availUnitsType2, priceType2));
+            }
+
+            LocalDate openDate = LocalDate.parse(parts[10].trim(), dtf);
+            LocalDate closeDate = LocalDate.parse(parts[11].trim(), dtf);
+
+            String manager = parts[12].trim();
+            int officerSlot = Integer.parseInt(parts[13].trim());
+            String officer = parts[14].trim();
+
+            boolean visibility = Boolean.parseBoolean(parts[15].trim());
+
+            return new Project(projectName, neighborhood, openDate, closeDate, manager, officerSlot, rooms, visibility, officer);
+
+        } catch (DateTimeParseException e) {
+            System.err.println("Error parsing date in project from line: " + csvLine + " - " + e.getMessage());
+        } catch (NumberFormatException e) {
+            System.err.println("Error parsing number (units, price, slots) in project from line: " + csvLine + " - " + e.getMessage());
+        } catch (IllegalArgumentException e) {
+             System.err.println("Error parsing enum (RoomType) in project from line: " + csvLine + " - " + e.getMessage());
+        } catch (Exception e) {
+            System.err.println("Unexpected error parsing project from line: " + csvLine);
+            e.printStackTrace();
+        }
+        return null;
     }
 
 	

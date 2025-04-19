@@ -9,23 +9,9 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 
 import auth.LoginManager;
-import control.UserManager;
-import control.ApplicantManager;
-import control.ApplicationManager;
-import control.EnquiryManager;
-import control.OfficerRegistrationManager;
-import control.ProjectManager;
-import control.BookingManager;
-
-import entities.Applicant;
-import entities.Enquiry;
-import entities.Manager;
-import entities.Officer;
-import entities.Project;
-import entities.Room;
-import enums.ApplicationStatus;
-import enums.OfficerRegistrationStatus;
-import enums.RoomType;
+import control.*;
+import entities.*;
+import enums.*;
 
 public class HDBOfficerUI extends ApplicantUI {
 
@@ -513,102 +499,131 @@ public class HDBOfficerUI extends ApplicantUI {
     }
 
 
-     private void bookFlatForApplicant() {
-         System.out.println("=========== Book Flat for Successful Applicants ===========");
-         List<Applicant> successfulApplicants = new ArrayList<>();
-         successfulApplicants.addAll(applicantUserManager.getUsers());
-         successfulApplicants.addAll(officerUserManager.getUsers());
+    private void bookFlatForApplicant() {
+        System.out.println("=========== Book Flat for Successful Applicants ===========");
 
-         successfulApplicants = successfulApplicants.stream()
-             .filter(a -> a.getStatus() == ApplicationStatus.SUCCESSFUL)
-             .collect(Collectors.toList());
-         
-         if (successfulApplicants.isEmpty()) {
-        	    System.out.println("No applicants with SUCCESSFUL status available for booking.");
-        	    return;
-        	}
+        // 1. Get projects the current officer handles and is approved for
+        List<Project> handledProjects = this.officer.getRegisteredProjects().stream()
+            .filter(p -> this.officer.getRegistrationStatusForProject(p) == OfficerRegistrationStatus.APPROVED)
+            .collect(Collectors.toList());
 
-        	System.out.println("========== Applicants Eligible for Booking ==========");
-        	for (int i = 0; i < successfulApplicants.size(); i++) {
-        	    Applicant a = successfulApplicants.get(i);
-        	    System.out.printf("%d. %s (%s) | Project: %s | Room: %s%n", i + 1, a.getName(), a.getNRIC(),
-        	                      a.getAppliedProject().getName(), a.getRoomChosen());
-        	}
-        	
+        if (handledProjects.isEmpty()) {
+            System.out.println("You are not currently approved to handle any projects.");
+            System.out.println("Therefore, you cannot book flats for any applicants.");
+            return;
+        }
+        System.out.println("You can book flats for applicants in the following projects you handle:");
+        handledProjects.forEach(p -> System.out.println("- " + p.getName()));
         System.out.println("-------------------------------------------------------------");
-         System.out.print("Enter NRIC of the applicant whose application status is SUCCESSFUL: ");
-         String applicantNRIC = scanner.nextLine().trim().toUpperCase();
 
-         if(!isValidNRIC(applicantNRIC)) {
-              System.out.println("Invalid NRIC format entered.");
-              return;
-         }
+        // 2. Get all successful applicants from ApplicationManager
+        List<Applicant> allSuccessfulApplicants = applicationManager.getAllApplicants().stream()
+            .filter(a -> a.getStatus() == ApplicationStatus.SUCCESSFUL)
+            .collect(Collectors.toList());
 
-         // Use BookingManager to handle the booking logic
-         boolean success = bookingManager.bookFlat(this.officer, applicantNRIC);
+        // 3. Filter successful applicants to only those in projects handled by this officer
+        List<Applicant> eligibleApplicants = allSuccessfulApplicants.stream()
+            .filter(a -> a.getAppliedProject() != null && handledProjects.contains(a.getAppliedProject()))
+            .collect(Collectors.toList());
 
-         if (success) {
-              System.out.println("Booking process completed.");
-         } else {
-              System.out.println("Booking process failed.");
-         }
-     }
+        if (eligibleApplicants.isEmpty()) {
+           System.out.println("No applicants with SUCCESSFUL status found for the projects you handle.");
+           return;
+       }
 
-     private void generateApplicantReceipt() {
-    	    System.out.println("========== Generate Booking Receipt ==========");
+       // 4. Display only the eligible applicants
+       System.out.println("======= Applicants Eligible for Booking (Your Projects) =======");
+       for (int i = 0; i < eligibleApplicants.size(); i++) {
+           Applicant a = eligibleApplicants.get(i);
+           System.out.printf("%d. %s (%s) | Project: %s | Room: %s%n",
+                             i + 1,
+                             a.getName(),
+                             a.getNRIC(),
+                             a.getAppliedProject().getName(),
+                             a.getRoomChosen() != null ? a.getRoomChosen() : "N/A");
+       }
+       System.out.println("-------------------------------------------------------------");
 
-    	    // Get officer's approved projects
-    	    List<Project> handledProjects = officer.getRegisteredProjects().stream()
-    	        .filter(p -> officer.getRegistrationStatusForProject(p) == OfficerRegistrationStatus.APPROVED)
-    	        .collect(Collectors.toList());
+       // 5. Prompt for NRIC from the filtered list
+        System.out.print("Enter NRIC of the applicant from the list above: ");
+        String applicantNRIC = scanner.nextLine().trim().toUpperCase();
 
-    	    if (handledProjects.isEmpty()) {
-    	        System.out.println("You are not currently handling any projects.");
-    	        return;
-    	    }
+        if(!isValidNRIC(applicantNRIC)) {
+             System.out.println("Invalid NRIC format entered.");
+             return;
+        }
 
-    	    // Find all booked applicants in these projects
-    	    List<Applicant> bookedApplicants = applicantUserManager.getUsers().stream()
-    	        .filter(a -> a.getStatus() == ApplicationStatus.BOOKED &&
-    	                     a.getAppliedProject() != null &&
-    	                     handledProjects.contains(a.getAppliedProject()))
-    	        .collect(Collectors.toList());
+        boolean nricInList = eligibleApplicants.stream().anyMatch(a -> a.getNRIC().equalsIgnoreCase(applicantNRIC));
+        if (!nricInList) {
+            System.out.println("The entered NRIC does not belong to an eligible applicant in the list shown.");
+            return;
+        }
 
-    	    if (bookedApplicants.isEmpty()) {
-    	        System.out.println("No applicants with status BOOKED under your projects.");
-    	        return;
-    	    }
+        // 6. Call BookingManager
+        boolean success = bookingManager.bookFlat(this.officer, applicantNRIC);
 
-    	    // Display list
-    	    System.out.println("\nBooked Applicants:");
-    	    for (int i = 0; i < bookedApplicants.size(); i++) {
-    	        Applicant a = bookedApplicants.get(i);
-    	        System.out.printf("%d. %s (%s) - %s\n", i + 1, a.getName(), a.getNRIC(), a.getAppliedProject().getName());
-    	    }
+        if (success) {
+             System.out.println("Booking process completed successfully.");
+        } else {
+             System.out.println("Booking process failed (check previous messages for reason).");
+        }
+    }
 
-    	    // Prompt selection
-    	    System.out.print("Select an applicant to generate receipt (Enter 0 to cancel): ");
-    	    int choice = -1;
-    	    try {
-    	        choice = scanner.nextInt();
-    	    } catch (InputMismatchException e) {
-    	        System.out.println("Invalid input.");
-    	        scanner.nextLine(); // clear
-    	        return;
-    	    }
-    	    scanner.nextLine(); // consume newline
+    private void generateApplicantReceipt() {
+        System.out.println("========== Generate Booking Receipt ==========");
 
-    	    if (choice <= 0 || choice > bookedApplicants.size()) {
-    	        System.out.println("Invalid input. Action cancelled.");
-    	        return;
-    	    }
+        List<Project> handledProjects = officer.getRegisteredProjects().stream()
+            .filter(p -> officer.getRegistrationStatusForProject(p) == OfficerRegistrationStatus.APPROVED)
+            .collect(Collectors.toList());
 
-    	    // Generate receipt
-    	    Applicant selectedApplicant = bookedApplicants.get(choice - 1);
-    	    String receipt = bookingManager.generateBookingReceipt(selectedApplicant);
-    	    System.out.println("\n" + receipt);
-    	}
+        if (handledProjects.isEmpty()) {
+            System.out.println("You are not currently handling any projects.");
+            return;
+        }
 
+        List<Applicant> bookedApplicants = applicationManager.getAllApplicants().stream()
+            .filter(a -> a.getStatus() == ApplicationStatus.BOOKED &&
+                         a.getAppliedProject() != null &&
+                         handledProjects.contains(a.getAppliedProject()))
+            .collect(Collectors.toList());
+
+
+        if (bookedApplicants.isEmpty()) {
+            System.out.println("No applicants with status BOOKED under your projects.");
+            return;
+        }
+
+        System.out.println("\nBooked Applicants:");
+        for (int i = 0; i < bookedApplicants.size(); i++) {
+            Applicant a = bookedApplicants.get(i);
+            System.out.printf("%d. %s (%s) - %s\n", i + 1, a.getName(), a.getNRIC(), a.getAppliedProject().getName());
+        }
+
+        System.out.print("Select an applicant to generate receipt (Enter 0 to cancel): ");
+        int choice = -1;
+        try {
+            choice = scanner.nextInt();
+        } catch (InputMismatchException e) {
+            System.out.println("Invalid input.");
+            scanner.nextLine();
+            return;
+        }
+        scanner.nextLine();
+
+        if (choice <= 0 || choice > bookedApplicants.size()) {
+            System.out.println("Invalid input. Action cancelled.");
+            return;
+        }
+
+        Applicant selectedApplicant = bookedApplicants.get(choice - 1);
+        Receipt receipt = bookingManager.generateBookingReceipt(selectedApplicant);
+
+        if (receipt != null) {
+            System.out.println("\n" + receipt.toFormattedString());
+        } else {
+            System.out.println("Failed to generate receipt for applicant " + selectedApplicant.getNRIC() + ".");
+        }
+    }
 
 
      private void viewOfficerProfile() {

@@ -33,27 +33,16 @@ public class OfficerRegistrationManager {
             return false;
         }
 
-        // 2. Officer cannot be APPROVED for a project with overlapping application dates
-        LocalDate newOpen = project.getOpenDate();
-        LocalDate newClose = project.getCloseDate();
-
-        for (Project existing : officer.getRegisteredProjects()) {
-            OfficerRegistrationStatus status = officer.getRegistrationStatusForProject(existing);
-            if (status == OfficerRegistrationStatus.APPROVED) {
-                LocalDate existOpen = existing.getOpenDate();
-                LocalDate existClose = existing.getCloseDate();
-                boolean overlaps = !(newClose.isBefore(existOpen) || newOpen.isAfter(existClose));
-                if (overlaps) {
-                    System.out.println("Registration failed: Overlaps with approved project '" + existing.getName() + "'.");
-                    return false;
-                }
-            }
-        }
-
-        // 3. Officer cannot already have a pending registration for this project
+        // 2. Officer cannot already have a pending registration for this project
         OfficerRegistrationStatus existingStatus = officer.getRegistrationStatusForProject(project);
         if (existingStatus == OfficerRegistrationStatus.PENDING) {
             System.out.println("Registration failed: Already pending for project '" + project.getName() + "'.");
+            return false;
+        }
+
+        // 3. Officer cannot already have a rejected registration for this project
+        if (existingStatus == OfficerRegistrationStatus.REJECTED) {
+            System.out.println("Registration failed: Your previous registration request for project '" + project.getName() + "' was REJECTED.");
             return false;
         }
 
@@ -62,6 +51,46 @@ public class OfficerRegistrationManager {
             System.out.println("Registration failed: No slots left for '" + project.getName() + "'.");
             return false;
         }
+
+        // 5. Check for overlaps with OTHER PENDING or APPROVED projects
+        LocalDate newOpen = project.getOpenDate();
+        LocalDate newClose = project.getCloseDate();
+
+        // Check for valid dates before proceeding with overlap check
+        if (newOpen == null || newClose == null) {
+             System.err.println("Registration failed: The target project '" + project.getName() + "' has invalid application dates.");
+             return false;
+        }
+
+        for (Project existingProject : officer.getRegisteredProjects()) {
+            if (existingProject.equals(project)) {
+                continue;
+            }
+
+            OfficerRegistrationStatus statusOfExisting = officer.getRegistrationStatusForProject(existingProject);
+
+            if (statusOfExisting == OfficerRegistrationStatus.PENDING || statusOfExisting == OfficerRegistrationStatus.APPROVED) {
+                LocalDate existOpen = existingProject.getOpenDate();
+                LocalDate existClose = existingProject.getCloseDate();
+
+                // Check if the other project has valid dates
+                if (existOpen != null && existClose != null) {
+                    // Check for date overlap:
+                    boolean overlaps = !(newClose.isBefore(existOpen) || newOpen.isAfter(existClose));
+
+                    if (overlaps) {
+                        System.out.println("Registration failed: The application period for '" + project.getName() +
+                                           "' (" + newOpen + " to " + newClose + ") overlaps with your " + statusOfExisting +
+                                           " registration for project '" + existingProject.getName() +
+                                           "' (" + existOpen + " to " + existClose + ").");
+                        return false;
+                    }
+                } else {
+                     System.err.println("Warning: Skipping overlap check with project '" + existingProject.getName() + "' due to its invalid dates.");
+                }
+            }
+        }
+
 
         // --- Register ---
         officer.addRegisteredProject(project, OfficerRegistrationStatus.PENDING);

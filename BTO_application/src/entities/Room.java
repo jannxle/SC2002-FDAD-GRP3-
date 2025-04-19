@@ -7,28 +7,30 @@ public class Room {
 	private int totalRooms;
 	private int availableRooms;
 	private double price;
-	
-	public Room(RoomType type, int totalRooms, double price) {
+
+	public Room(RoomType type, int totalRooms, int availableRooms, double price) {
 		this.type = type;
 		this.totalRooms = totalRooms;
 		this.price = price;
-		this.availableRooms = totalRooms; //initially all rooms are available
+		this.availableRooms = Math.min(availableRooms, totalRooms);
+		if (availableRooms > totalRooms) {
+		    System.err.println("Warning: Initial available rooms (" + availableRooms +
+		                       ") greater than total rooms (" + totalRooms +
+		                       ") for " + type + ". Setting available to total.");
+		}
 	}
-	
+
 	public RoomType getRoomType() {
 		return type;
 	}
 	public int getTotalRooms() {
 		return totalRooms;
 	}
-	public void setTotalRooms(int totalRooms) {
-		this.totalRooms = totalRooms;
-	}
 	public int getAvailableRooms() {
 		return availableRooms;
 	}
 	public void setAvailableRooms(int availableRooms) {
-		this.availableRooms = availableRooms;
+		this.availableRooms = Math.max(0, Math.min(availableRooms, this.totalRooms));
 	}
 	public double getPrice() {
 		return price;
@@ -36,30 +38,32 @@ public class Room {
 	public void setPrice(double price) {
 		this.price = price;
 	}
+
 	public boolean incrementAvailableRooms() {
 		if(availableRooms < totalRooms) {
 			availableRooms++;
 			return true;
 		}
+		System.err.println("Increment failed: Available rooms already at maximum (" + availableRooms + "/" + totalRooms + ").");
 		return false;
 	}
-	
+
 	public boolean decrementAvailableRooms() {
 		if (availableRooms > 0) {
 			availableRooms--;
 			return true;
 		}
+		System.err.println("Decrement failed: No available rooms left (" + availableRooms + "/" + totalRooms + ").");
 		return false;
 	}
-	
+
     @Override
     public String toString() {
         return "Room{" +
                "type=" + type +
-               ", total Number of Rooms=" + totalRooms +
+               ", totalRooms=" + totalRooms +
                ", price=" + price +
-               ", availableNumber of Rooms=" + availableRooms +
+               ", availableRooms=" + availableRooms +
                '}';
     }
 }
-

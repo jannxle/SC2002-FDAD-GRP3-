@@ -32,7 +32,7 @@ public class Main {
         ApplicationManager applicationManager = new ApplicationManager(projectManager, applicantUserManager, officerUserManager);
         OfficerRegistrationManager officerRegistrationManager = new OfficerRegistrationManager(projectManager, officerUserManager);
         BookingManager bookingManager = new BookingManager(projectManager, applicantUserManager, applicationManager);
-        ReportManager reportManager = new ReportManager(applicantUserManager, officerUserManager);
+        ReportManager reportManager = new ReportManager(applicantUserManager, officerUserManager, applicationManager);
 
         applicantUserManager.loadUsers();
         officerUserManager.loadUsers();

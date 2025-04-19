@@ -203,7 +203,7 @@ public class HDBManagerUI {
          } finally {
               scanner.nextLine();
          }
-         return new Room(type, totalUnits, price);
+         return new Room(type, totalUnits, totalUnits, price);
     }
 
      private LocalDate promptForDate(String prompt) {
@@ -594,7 +594,6 @@ public class HDBManagerUI {
         System.out.println("1. Approve Application");
         System.out.println("2. Reject Application");
         System.out.println("0. Cancel");
-        System.out.println();
         System.out.print("Enter choice: ");
         int actionChoice = -1;
         try { actionChoice = scanner.nextInt(); } catch (InputMismatchException e) {}
@@ -603,16 +602,15 @@ public class HDBManagerUI {
         boolean success = false;
         if (actionChoice == 1) {
              success = applicationManager.approveApplication(applicantToProcess);
-             if (success) System.out.println("Application approved."); else System.out.println("Approval failed.");
-             applicationManager.saveApplications("data/applications.csv", allApplicants);
+             if (success) System.out.println("Application approved action completed.");
+             else System.out.println("Approval action failed or had issues (check logs).");
         } else if (actionChoice == 2) {
              success = applicationManager.rejectApplication(applicantToProcess);
-             if (success) System.out.println("Application rejected."); else System.out.println("Rejection failed.");
-             applicationManager.saveApplications("data/applications.csv", allApplicants);
+             if (success) System.out.println("Application rejected action completed.");
+             else System.out.println("Rejection action failed.");
         } else {
             System.out.println("Action cancelled.");
         }
-        projectManager.saveProjects("data/ProjectList.csv");
     }
 
     private void manageApplicationWithdrawals() {
@@ -663,40 +661,33 @@ public class HDBManagerUI {
         System.out.println("--------------------------------------------------");
         System.out.println("Selected Applicant: " + applicantToProcess.getNRIC());
         System.out.println("1. Approve Withdrawal");
-        System.out.println("2. Reject Withdrawal (set status back to PENDING)");
+        System.out.println("2. Reject Withdrawal");
         System.out.println("--------------------------------------------------");
         System.out.print("Enter your choice: ");
-        
+
         int decision = -1;
         try { decision = scanner.nextInt(); } catch (InputMismatchException e) {}
         scanner.nextLine();
 
+        boolean success = false;
         if (decision == 1) {
-            // Approve withdrawal — clear application and restore room if necessary
-            if (project != null && room != null) {
-                boolean updated = projectManager.updateRoomAvailability(project, room, +1);
-                if (updated) {
-                    System.out.println("Room availability restored.");
-                }
+            success = applicationManager.approveWithdrawal(applicantToProcess);
+            if (success) {
+                System.out.println("Withdrawal approval processed.");
+            } else {
+                System.out.println("Withdrawal approval failed (check logs).");
             }
-            applicantToProcess.setAppliedProject(null);
-            applicantToProcess.setRoomChosen(null);
-            applicantToProcess.setStatus(null);
-            System.out.println("Withdrawal approved. Application deleted.");
         } else if (decision == 2) {
-            applicantToProcess.setStatus(ApplicationStatus.PENDING);
-            System.out.println("Withdrawal rejected. Status reverted to PENDING.");
+             success = applicationManager.rejectWithdrawal(applicantToProcess);
+             if (success) {
+                 System.out.println("Withdrawal rejection processed.");
+             } else {
+                  System.out.println("Withdrawal rejection failed (check logs).");
+             }
         } else {
             System.out.println("Invalid choice. Action cancelled.");
             return;
         }
-
-        // Save updated application data
-        List<Applicant> allApplicants = new ArrayList<>();
-        allApplicants.addAll(applicantUserManager.getUsers());
-        allApplicants.addAll(officerUserManager.getUsers());
-        applicationManager.saveApplications("data/applications.csv", allApplicants);
-        
     }
 
 
@@ -797,14 +788,21 @@ public class HDBManagerUI {
                  catch (IllegalArgumentException e) { System.out.println("Invalid flat type, showing all."); }
             }
 
-            String report = reportManager.generateBookingReport(criteria);
+            Report report = reportManager.generateBookingReport(criteria);
+
             System.out.println("\n--- Booking Report ---");
-            System.out.println(report);
+            if (report != null) {
+                System.out.println(report.toFormattedString());
+            } else {
+                 System.out.println("Failed to generate report.");
+            }
             System.out.println("--- End of Report ---");
         } else {
             System.out.println("Report generation functionality is not available (ReportManager not configured).");
         }
     }
+
+    
 
     private void changePassword() {
          System.out.println("=========== Change Password ==========");
