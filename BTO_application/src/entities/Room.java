@@ -38,7 +38,17 @@ public class Room {
 	public void setPrice(double price) {
 		this.price = price;
 	}
-
+	
+	//used for manager to edit project information
+	public void increaseRoomSupply(int additionalUnits) {
+	    if (additionalUnits > 0) {
+	        this.totalRooms += additionalUnits;
+	        this.availableRooms += additionalUnits;
+	    } else {
+	        System.err.println("Cannot increase room supply by non-positive number.");
+	    }
+	}
+	
 	public boolean incrementAvailableRooms() {
 		if(availableRooms < totalRooms) {
 			availableRooms++;

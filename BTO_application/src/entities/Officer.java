@@ -42,4 +42,9 @@ public class Officer extends Applicant {
     public void setAppliedProject(Project newProject) {
         super.setAppliedProject(newProject);
     }
+    
+    public void removeRegisteredProject(Project project) {
+        registeredProjects.remove(project);
+        registrationStatuses.remove(project);
+    }
 }

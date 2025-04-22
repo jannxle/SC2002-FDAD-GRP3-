@@ -83,6 +83,7 @@ public class Project {
 	public void setRooms(List<Room> rooms) {
 	    this.rooms = rooms;
 	}	
+	
 	public int getRoomCount(RoomType type) {
 	    for (Room room : rooms) {
 	        if (room.getRoomType() == type) {
@@ -91,6 +92,7 @@ public class Project {
 	    }
 	    return 0; // If room type not found
 	}
+	
 	public void setRoomCount(RoomType type, int count) {
 	    for (Room room : rooms) {
 	        if (room.getRoomType() == type) {
@@ -99,6 +101,16 @@ public class Project {
 	        }
 	    }
 	}
+	
+	public Room getRoom(RoomType type) {
+	    for (Room room : rooms) {
+	        if (room.getRoomType() == type) {
+	            return room;
+	        }
+	    }
+	    return null; // if not found
+	}
+	
 	public boolean isVisibility() {
 		return visibility;
 	}

@@ -365,15 +365,23 @@ public class HDBManagerUI {
             case 2:
                 LocalDate newOpenDate = promptForDate("Enter new Open Date (dd/MM/yy): ");
                 if (newOpenDate != null) {
-                    project.setOpenDate(newOpenDate);
-                    System.out.println("Open Date updated.");
+                    if (projectManager.hasDateConflict(project, project.getManager(), newOpenDate, project.getCloseDate())) {
+                        System.out.println("Date conflict: Another project by you overlaps with the new open date.");
+                    } else {
+                        project.setOpenDate(newOpenDate);
+                        System.out.println("Open Date updated.");
+                    }
                 }
                 break;
             case 3:
                 LocalDate newCloseDate = promptForDate("Enter new Close Date (dd/MM/yy): ");
                 if (newCloseDate != null) {
-                    project.setCloseDate(newCloseDate);
-                    System.out.println("Close Date updated.");
+                    if (projectManager.hasDateConflict(project, project.getManager(), project.getOpenDate(), newCloseDate)) {
+                        System.out.println("Date conflict: Another project by you overlaps with the new close date.");
+                    } else {
+                        project.setCloseDate(newCloseDate);
+                        System.out.println("Close Date updated.");
+                    }
                 }
                 break;
             case 4:
@@ -390,31 +398,45 @@ public class HDBManagerUI {
                 }
                 break;
             case 5:
-            	System.out.print("Enter new number of Two Room Flats:");
-            	int newTwoRoom = -1;
-            	try { 
-            		newTwoRoom = scanner.nextInt(); 
-            	} catch (InputMismatchException e) {}
+            	System.out.print("Enter number of additional Two Room Flats to add: ");
+                int addTwoRoom = -1;
+                try {
+                    addTwoRoom = scanner.nextInt();
+                } catch (InputMismatchException e) {}
                 scanner.nextLine();
-                
-                if (newTwoRoom >= 0) {
-                    project.setRoomCount(RoomType.TwoRoom, newTwoRoom);
-                    System.out.println("Two Room flat count updated.");
+
+                if (addTwoRoom > 0) {
+                    Room twoRoom = project.getRoom(RoomType.TwoRoom);
+                    if (twoRoom != null) {
+                        twoRoom.increaseRoomSupply(addTwoRoom);
+                        System.out.println("Two Room flat supply updated (+" + addTwoRoom + ").");
+                        projectManager.saveProjects("data/ProjectList.csv"); // persist changes
+                    } else {
+                        System.out.println("Two Room type not found in this project.");
+                    }
                 } else {
-                    System.out.println("Invalid number. Room count must be more than or equal to 0.");
+                    System.out.println("Invalid input. Must be a positive number.");
                 }
                 break;
             case 6:
-            	System.out.print("Enter new number of Three Room Flats: ");
-                int newThreeRoomCount = -1;
-                try { newThreeRoomCount = scanner.nextInt(); } catch (InputMismatchException e) {}
+               	System.out.print("Enter number of additional Three Room Flats to add: ");
+                int addThreeRoom = -1;
+                try {
+                    addThreeRoom = scanner.nextInt();
+                } catch (InputMismatchException e) {}
                 scanner.nextLine();
-                
-                if (newThreeRoomCount >= 0) {
-                    project.setRoomCount(RoomType.ThreeRoom, newThreeRoomCount);
-                    System.out.println("Three Room flat count updated.");
+
+                if (addThreeRoom > 0) {
+                    Room twoRoom = project.getRoom(RoomType.ThreeRoom);
+                    if (twoRoom != null) {
+                        twoRoom.increaseRoomSupply(addThreeRoom);
+                        System.out.println("Three Room flat supply updated (+" + addThreeRoom + ").");
+                        projectManager.saveProjects("data/ProjectList.csv"); // persist changes
+                    } else {
+                        System.out.println("Three Room type not found in this project.");
+                    }
                 } else {
-                    System.out.println("Invalid number. Room count must be more than or equal to 0.");
+                    System.out.println("Invalid input. Must be a positive number.");
                 }
                 break;
             case 0:
@@ -428,7 +450,6 @@ public class HDBManagerUI {
         // Save changes
         System.out.println();
         projectManager.saveProjects("data/ProjectList.csv");
-        System.out.println("Project updated successfully.");
     }
 
     private void deleteProject(Project project) {
@@ -456,8 +477,27 @@ public class HDBManagerUI {
 
         	    // Save updated applications.csv
         	    applicationManager.saveApplications("data/applications.csv", allApplicants);
+        	    
+        	    List<Officer> allOfficers = officerUserManager.getUsers();
 
-        	    System.out.println("Project deleted successfully and associated applications removed.");
+        	    for (Officer officer : allOfficers) {
+        	        List<Project> toRemove = new ArrayList<>();
+
+        	        for (Project registered : officer.getRegisteredProjects()) {
+        	            if (registered.getName().equalsIgnoreCase(project.getName())) {
+        	                toRemove.add(registered);  // avoid concurrent modification
+        	            }
+        	        }
+
+        	        for (Project p : toRemove) {
+        	            officer.removeRegisteredProject(p);  // custom method we added earlier
+        	        }
+        	    }
+
+        	    // Save the updated OfficerList.csv
+        	    officerUserManager.saveUsers();
+
+        	    System.out.println("Project deleted successfully.");
         	}
         } else {
             System.out.println("Deletion cancelled.");

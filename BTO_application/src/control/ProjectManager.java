@@ -198,6 +198,17 @@ public class ProjectManager {
         System.err.println("Project '" + projectName + "' not found for officer assignment.");
         return false;
     }
+    
+    public boolean hasDateConflict(Project currentProject, String managerName, LocalDate newOpenDate, LocalDate newCloseDate) {
+        for (Project p : projects) {
+            if (!p.equals(currentProject) && p.getManager().equalsIgnoreCase(managerName)) {
+                // Check for overlapping date ranges
+                boolean overlap = !(newCloseDate.isBefore(p.getOpenDate()) || newOpenDate.isAfter(p.getCloseDate()));
+                if (overlap) return true;
+            }
+        }
+        return false;
+    }
 
     private String toCSV(Project p) {
         if (p == null) return "";
