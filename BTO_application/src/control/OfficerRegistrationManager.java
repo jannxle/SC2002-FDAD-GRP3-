@@ -11,7 +11,7 @@ import java.util.List;
 public class OfficerRegistrationManager {
 
     private final ProjectManager projectManager;
-    private final OfficerUserManager officerUserManager;
+    private final UserManager<Officer> officerUserManager;
 
     public OfficerRegistrationManager(ProjectManager projectManager, OfficerUserManager officerUserManager) {
         if (projectManager == null || officerUserManager == null) {
@@ -109,7 +109,9 @@ public class OfficerRegistrationManager {
                 }
                 officer.updateRegistrationStatus(project, OfficerRegistrationStatus.APPROVED);
                 project.setOfficerSlot(project.getOfficerSlot() - 1);
-                officerUserManager.updateProjectListCSV(project, officer.getName());
+                if (officerUserManager instanceof OfficerUserManager) {
+                    ((OfficerUserManager) officerUserManager).updateProjectListCSV(project, officer.getName());
+                }
                 project.addOfficer(officer.getName());
                 officerUserManager.saveUsers();
                 projectManager.saveProjects("data/ProjectList.csv");

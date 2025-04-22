@@ -1,4 +1,4 @@
 Name,NRIC,Age,Status,Password,RegisteredProjects,RegistrationStatuses
 Daniel,T2109876H,36,single,password,,
 Emily,S6543210I,28,single,password,Suites,PENDING
-David,T1234567J,29,married,password,Clover Bay,APPROVED
+David,T1234567J,29,married,password,Clover Bay;Sengkang Rise,APPROVED;PENDING
