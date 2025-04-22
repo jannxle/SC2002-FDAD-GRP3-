@@ -33,6 +33,7 @@ public class Main {
         OfficerRegistrationManager officerRegistrationManager = new OfficerRegistrationManager(projectManager, officerUserManager);
         BookingManager bookingManager = new BookingManager(projectManager, applicantUserManager, applicationManager);
         ReportManager reportManager = new ReportManager(applicantUserManager, officerUserManager, applicationManager);
+        FilterManager filterManager = new FilterManager("data/Filter.csv");
 
         applicantUserManager.loadUsers();
         officerUserManager.loadUsers();
@@ -72,7 +73,8 @@ public class Main {
             projectManager,
             officerRegistrationManager,
             bookingManager,
-            reportManager
+            reportManager,
+            filterManager
         );
         loginManager.welcomeBanner();
 
@@ -88,6 +90,7 @@ public class Main {
         managerUserManager.saveUsers();
         projectManager.saveProjects("data/ProjectList.csv");
         enquiryManager.saveEnquiries("data/enquiries.csv");
+        filterManager.saveFilters();
 
         System.out.println("Goodbye!");
     }

@@ -28,6 +28,9 @@ public class HDBManagerUI {
     private final UserManager<Officer> officerUserManager;
     private final UserManager<Manager> managerUserManager;
     private final LoginManager loginManager;
+    private final Filter filter;
+    private final FilterManager filterManager;
+ 
 
     public HDBManagerUI(Manager manager,
                         ProjectManager projectManager,
@@ -38,7 +41,8 @@ public class HDBManagerUI {
                         UserManager<Applicant> applicantUserManager,
                         UserManager<Officer> officerUserManager,
                         UserManager<Manager> managerUserManager,
-                        LoginManager loginManager) {
+                        LoginManager loginManager,
+                        FilterManager filterManager) {
         this.manager = manager;
         this.projectManager = projectManager;
         this.applicationManager = applicationManager;
@@ -49,6 +53,8 @@ public class HDBManagerUI {
         this.officerUserManager = officerUserManager;
         this.managerUserManager = managerUserManager;
         this.loginManager = loginManager;
+        this.filterManager = filterManager;
+        this.filter = filterManager.getFilter(manager.getNRIC());
         this.scanner = new Scanner(System.in);
     }
 
@@ -62,21 +68,22 @@ public class HDBManagerUI {
             System.out.println(" 1. Create New BTO Project Listing");
             System.out.println(" 2. View/Edit/Delete Project Listings");
             System.out.println(" 3. Toggle Project Visibility");
+            System.out.println(" 4. Set/View/Remove Filters for Viewing Project Listings");
             System.out.println();
             System.out.println("------ Registration & Application Management ------");
-            System.out.println(" 4. View/Approve/Reject Officer Registrations");
-            System.out.println(" 5. View/Approve/Reject BTO Applications");
-            System.out.println(" 6. Process Application Withdrawals");
+            System.out.println(" 5. View/Approve/Reject Officer Registrations");
+            System.out.println(" 6. View/Approve/Reject BTO Applications");
+            System.out.println(" 7. Process Application Withdrawals");
             System.out.println();
             System.out.println("--------------- Enquiries & Reports ---------------");
-            System.out.println(" 7. View All Enquiries");
-            System.out.println(" 8. Reply to Enquiries (for projects handled)");
-            System.out.println(" 9. Generate Applicant Booking Report");
+            System.out.println(" 8. View All Enquiries");
+            System.out.println(" 9. Reply to Enquiries (for projects handled)");
+            System.out.println(" 10. Generate Applicant Booking Report");
             System.out.println();
             System.out.println("--------------------- Account ---------------------");
-            System.out.println("10. Change Password");
-            System.out.println("11. View My Profile");
-            System.out.println("12. Logout");
+            System.out.println(" 11. Change Password");
+            System.out.println(" 12. View My Profile");
+            System.out.println(" 13. Logout");
             System.out.println("===================================================");
             System.out.print("Enter your choice: ");
 
@@ -94,15 +101,16 @@ public class HDBManagerUI {
                 case 1: createProject(); break;
                 case 2: manageProjects(); break;
                 case 3: toggleProjectVisibility(); break;
-                case 4: manageOfficerRegistrations(); break;
-                case 5: manageBTOApplications(); break;
-                case 6: manageApplicationWithdrawals(); break;
-                case 7: viewAllEnquiries(); break;
-                case 8: replyToMyProjectEnquiries();break;
-                case 9: generateBookingReport(); break;
-                case 10: changePassword(); break;
-                case 11: viewManagerProfile(); break;
-                case 12: logout = true; loginManager.logout(this.manager); break;
+                case 4: manageFilters(); break;
+                case 5: manageOfficerRegistrations(); break;
+                case 6: manageBTOApplications(); break;
+                case 7: manageApplicationWithdrawals(); break;
+                case 8: viewAllEnquiries(); break;
+                case 9: replyToMyProjectEnquiries();break;
+                case 10: generateBookingReport(); break;
+                case 11: changePassword(); break;
+                case 12: viewManagerProfile(); break;
+                case 13: logout = true; loginManager.logout(this.manager); break;
                 default: System.out.println("Invalid option. Please try again.");
             }
              if (!logout) {
@@ -243,6 +251,7 @@ public class HDBManagerUI {
         System.out.println("Choose an option:");
         System.out.println("1. View All Projects");
         System.out.println("2. View Only My Projects");
+        System.out.println();
         System.out.print("Enter choice: ");
         int viewChoice = -1;
         try { viewChoice = scanner.nextInt(); } catch (InputMismatchException e) {}
@@ -258,6 +267,8 @@ public class HDBManagerUI {
             projectsToDisplay = projectManager.getProjects();
             System.out.println("\n================ All Projects ===============");
         }
+        
+        projectsToDisplay = ViewProjectFilter.apply(projectsToDisplay, filter);
 
         if (projectsToDisplay.isEmpty()) {
             System.out.println("No projects found matching your criteria.");
@@ -286,6 +297,7 @@ public class HDBManagerUI {
         System.out.println("1. Edit Project");
         System.out.println("2. Delete Project");
         System.out.println("0. Cancel");
+        System.out.println();
         System.out.print("Enter choice: ");
         int actionChoice = -1;
         try { actionChoice = scanner.nextInt(); } catch (InputMismatchException e) {}
@@ -862,5 +874,11 @@ public class HDBManagerUI {
              System.out.println("\nNot currently managing any active projects.");
         }
         System.out.println("===================================");
+    }
+    
+    private void manageFilters() {
+        FilterUI.promptFilterSettings(scanner, filter);
+        filterManager.setFilter(manager.getNRIC(), filter);
+        filterManager.saveFilters(); // Save to CSV
     }
 }

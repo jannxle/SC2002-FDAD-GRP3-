@@ -30,7 +30,8 @@ public class HDBOfficerUI extends ApplicantUI {
                         ApplicationManager applicationManager,
                         ProjectManager projectManager,
                         OfficerRegistrationManager officerRegistrationManager,
-                        BookingManager bookingManager) {
+                        BookingManager bookingManager,
+                        FilterManager filterManager) {
         // Call the super constructor (ApplicantUI)
         super(officer,
               applicantManager,
@@ -38,7 +39,8 @@ public class HDBOfficerUI extends ApplicantUI {
               loginManager,
               enquiryManager,
               applicationManager,
-              projectManager);
+              projectManager,
+              filterManager);
 
         this.officer = officer;
         this.officerUserManager = officerUserManager;
@@ -63,16 +65,17 @@ public class HDBOfficerUI extends ApplicantUI {
             System.out.println(" 5. Withdraw My Application");
             System.out.println(" 6. Submit an Enquiry");
             System.out.println(" 7. View/Edit/Delete My Enquiries");
+            System.out.println(" 8. Set/View/Remove Filters for viewing Projects");
             System.out.println();
             System.out.println("------------- Officer Actions -------------");
-            System.out.println(" 8. Register to Handle a Project");
-            System.out.println(" 9. View My HDB Officer Registration Status");
-            System.out.println("10. View Details of Project I Handle");
-            System.out.println("11. View and Reply to Project Enquiries");
-            System.out.println("12. Book Flat for Successful Applicant");
-            System.out.println("13. Generate Booking Receipt for Applicant");
-            System.out.println("14. View My Profile");
-            System.out.println("15. Logout");
+            System.out.println(" 9. Register to Handle a Project");
+            System.out.println(" 10. View My HDB Officer Registration Status");
+            System.out.println(" 11. View Details of Project I Handle");
+            System.out.println(" 12. View and Reply to Project Enquiries");
+            System.out.println(" 13. Book Flat for Successful Applicant");
+            System.out.println(" 14. Generate Booking Receipt for Applicant");
+            System.out.println(" 15. View My Profile");
+            System.out.println(" 16. Logout");
             System.out.println("===========================================");
             System.out.print("Enter your choice: ");
 
@@ -112,30 +115,33 @@ public class HDBOfficerUI extends ApplicantUI {
                 case 7:
                     viewEditDeleteMyEnquiries(); // Inherited from ApplicantUI
                     break;
-                // Officer Actions
                 case 8:
+                	manageFilters();
+                	break;
+                // Officer Actions
+                case 9:
                     registerToHandleProject();
                     break;
-                case 9:
+                case 10:
                     viewOfficerRegistrationStatus();
                     break;
-                case 10:
+                case 11:
                     viewHandledProjectDetails();
                     break;
-                case 11:
+                case 12:
                     viewAndReplyToProjectEnquiries();
                     enquiryManager.saveEnquiries("data/enquiries.csv");
                     break;
-                case 12:
+                case 13:
                     bookFlatForApplicant();
                     break;
-                 case 13:
+                 case 14:
                     generateApplicantReceipt();
                     break;
-                case 14:
+                case 15:
                     viewOfficerProfile();
                     break;
-                case 15:
+                case 16:
                     logout = true;
                     loginManager.logout(this.officer);
                     break;
@@ -187,9 +193,9 @@ public class HDBOfficerUI extends ApplicantUI {
     }
     
     protected void viewAvailableProjects() {
-        System.out.println("========== All BTO Projects (Officer View) ===============================================");
+        System.out.println("========== Available BTO Projects for You ============================================================");
         // Use the same applicantManager but pass a flag indicating this is an officer
-        List<Project> projects = projectManager.getProjects(); // true indicates officer access
+        List<Project> projects = ViewProjectFilter.apply(applicantManager.getAvailableProjectsForOfficer(officer), filter); // true indicates officer access
         
         if (projects.isEmpty()) {
             System.out.println("There are currently no BTO projects in the system.");
@@ -197,55 +203,7 @@ public class HDBOfficerUI extends ApplicantUI {
         }
         displayProjectListWithRooms(projects);
     }
-    //override to show the visibility of the project to the officer only
-    protected void displayProjectListWithRooms(List<Project> projects) {
-        // Format the header with consistent column widths
-        System.out.println("=".repeat(115));  // Adjust based on total width
-        System.out.printf(" %-20s | %-15s | %-30s | %-12s | %-12s | %-10s%n", 
-                          "Project Name", "Neighbourhood", "Room Types (Units Available)", "Open Date", "Close Date", "Visibility");
-        System.out.println("-".repeat(115));  // Adjust based on total width
-        
-        if (projects.isEmpty()) {
-            System.out.println(" < No Projects Found >");
-        } else {
-            // Format dates with DateTimeFormatter for consistent display
-            DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd-MM-YY");
-            
-            for (Project p : projects) {
-                StringBuilder roomInfo = new StringBuilder();
-                if (p.getRooms() != null && !p.getRooms().isEmpty()) {
-                    boolean firstRoom = true;
-                    for (Room r : p.getRooms()) {
-                        if (!firstRoom) roomInfo.append(", ");
-                        roomInfo.append(r.getRoomType().name())
-                            .append(" (")
-                            .append(r.getAvailableRooms())
-                            .append(")");
-                        firstRoom = false;
-                    }
-                } else {
-                    roomInfo.append("<No room info>");
-                }
-
-                // Format dates
-                String openDate = p.getOpenDate().format(dateFormatter);
-                String closeDate = p.getCloseDate().format(dateFormatter);
-                
-                // Add visibility status
-                String visibilityStatus = p.isVisibility() ? "ON" : "OFF";
-
-                System.out.printf(" %-20s | %-15s | %-30s | %-12s | %-12s | %-10s%n",
-                    p.getName(),
-                    p.getNeighbourhood(),
-                    roomInfo.toString(),
-                    openDate,
-                    closeDate,
-                    visibilityStatus);
-            }
-        }
-        System.out.println("=".repeat(115));  // Adjust based on total width
-    }
-    
+   
     protected void applyForProject() {
         // First check if this officer is assigned to any active projects
         List<Project> officerProjects = officer.getRegisteredProjects();
@@ -645,7 +603,7 @@ public class HDBOfficerUI extends ApplicantUI {
                  System.out.println();
              }
          }
-
+         System.out.println();
          System.out.println("============== Applicant Role =============");
          super.displayApplicantApplicationStatus(this.officer);
          System.out.println("===========================================");
@@ -709,4 +667,10 @@ public class HDBOfficerUI extends ApplicantUI {
         if (nric == null) return false;
         return nric.matches("^[ST]\\d{7}[A-Za-z]$");
     }
+     
+     private void manageFilters() {
+ 	    FilterUI.promptFilterSettings(scanner, filter);
+ 	    filterManager.setFilter(officer.getNRIC(), filter);
+ 	    filterManager.saveFilters();
+  }
 }

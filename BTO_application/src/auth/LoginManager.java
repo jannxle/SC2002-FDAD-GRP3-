@@ -11,6 +11,7 @@ import control.ApplicantManager;
 import control.ApplicationManager;
 import control.BookingManager;
 import control.EnquiryManager;
+import control.FilterManager;
 import control.OfficerRegistrationManager;
 import control.ProjectManager;
 import control.ReportManager;
@@ -29,6 +30,7 @@ public class LoginManager {
 	private final OfficerRegistrationManager officerRegistrationManager;
     private final BookingManager bookingManager;
     private final ReportManager reportManager;
+    private final FilterManager filterManager;
 
 	public LoginManager(ApplicantManager applicantManager,
                         UserManager<Applicant> applicantUserManager,
@@ -39,7 +41,8 @@ public class LoginManager {
                         ProjectManager projectManager,
                         OfficerRegistrationManager officerRegistrationManager,
                         BookingManager bookingManager,
-                        ReportManager reportManager
+                        ReportManager reportManager,
+                        FilterManager filterManager
                         ) {
 		this.applicantManager = applicantManager;
 		this.applicantUserManager = applicantUserManager;
@@ -51,6 +54,7 @@ public class LoginManager {
         this.officerRegistrationManager = officerRegistrationManager;
         this.bookingManager = bookingManager;
         this.reportManager = reportManager;
+        this.filterManager = filterManager;
 	}
 	
 	public static void welcomeBanner() {
@@ -141,7 +145,8 @@ public class LoginManager {
                         applicationManager,
                         projectManager,
                         officerRegistrationManager,
-                        bookingManager
+                        bookingManager,
+                        filterManager
                      );
                     officerUI.showMenu();
 
@@ -155,7 +160,8 @@ public class LoginManager {
                         this,
                         enquiryManager,
                         applicationManager,
-                        projectManager
+                        projectManager,
+                        filterManager
                     );
                     applicantUI.showMenu();
 
@@ -172,7 +178,8 @@ public class LoginManager {
                          applicantUserManager,
                          officerUserManager,
                          managerUserManager,
-                         this
+                         this,
+                         filterManager
                      );
                      managerUI.showMenu();
                 } else {

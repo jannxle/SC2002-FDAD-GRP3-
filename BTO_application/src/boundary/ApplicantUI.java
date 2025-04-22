@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.InputMismatchException;
 import java.util.List;
 import java.util.Scanner;
+import java.util.stream.Collectors;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 
@@ -11,10 +12,13 @@ import auth.LoginManager;
 import control.ApplicantManager;
 import control.ApplicationManager;
 import control.EnquiryManager;
+import control.FilterManager;
 import control.UserManager;
+import control.ViewProjectFilter;
 import control.ProjectManager;
 import entities.Applicant;
 import entities.Enquiry;
+import entities.Filter;
 import entities.Project;
 import entities.Room;
 import entities.User;
@@ -31,6 +35,8 @@ public class ApplicantUI {
     protected UserManager<Applicant> applicantUserManager;
     protected ProjectManager projectManager;
     protected LoginManager loginManager;
+    protected Filter filter;
+    protected FilterManager filterManager;
 
     public ApplicantUI(Applicant applicant,
                        ApplicantManager applicantManager,
@@ -38,10 +44,11 @@ public class ApplicantUI {
                        LoginManager loginManager,
                        EnquiryManager enquiryManager,
                        ApplicationManager applicationManager,
-                       ProjectManager projectManager) {
+                       ProjectManager projectManager,
+                       FilterManager filterManager) {
         if (applicant == null || applicantManager == null || applicantUserManager == null ||
             loginManager == null || enquiryManager == null || applicationManager == null ||
-            projectManager == null) {
+            projectManager == null || filterManager == null) {
              throw new IllegalArgumentException("All manager dependencies and applicant must be non-null.");
         }
         this.applicant = applicant;
@@ -51,6 +58,8 @@ public class ApplicantUI {
         this.enquiryManager = enquiryManager;
         this.applicationManager = applicationManager;
         this.projectManager = projectManager;
+        this.filterManager = filterManager;
+        this.filter = filterManager.getFilter(applicant.getNRIC());
         this.scanner = new Scanner(System.in);
     }
 
@@ -68,7 +77,8 @@ public class ApplicantUI {
             System.out.println(" 6. Submit an Enquiry");
             System.out.println(" 7. View/Edit/Delete My Enquiries");
             System.out.println(" 8. View My Profile");
-            System.out.println(" 9. Logout");
+            System.out.println(" 9. Set/View/Remove Filters for Viewing Projects");
+            System.out.println(" 10. Logout");
             System.out.println("===========================================");
             System.out.print("Enter your choice: ");
 
@@ -101,7 +111,8 @@ public class ApplicantUI {
                 	enquiryManager.saveEnquiries("data/enquiries.csv");
                 	break;
                 case 8: viewApplicantProfile(); break;
-                case 9: logout = true; loginManager.logout(this.applicant); break;
+                case 9: manageFilters(); break;
+                case 10: logout = true; loginManager.logout(this.applicant); break;
                 default: System.out.println("Invalid option. Please try again.");
             }
             if (!logout) {
@@ -154,8 +165,8 @@ public class ApplicantUI {
     }
 
     protected void viewAvailableProjects() {
-        System.out.println("========== Available BTO Projects ====================================================================");
-        List<Project> projects = applicantManager.getAvailableProjects(this.applicant);
+        System.out.println("========== Available BTO Projects for You ============================================================");
+        List<Project> projects = ViewProjectFilter.apply(applicantManager.getAvailableProjects(applicant), filter);
 
         if (projects.isEmpty()) {
             System.out.println("There are currently no BTO projects available for you based on your eligibility or project availability.");
@@ -179,12 +190,15 @@ public class ApplicantUI {
         } else {
             // Format dates with DateTimeFormatter for consistent display
             DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd-MM-yy"); // Changed YY to yy for standard format
+            RoomType filteredRoomType = filter.getRoomType();
             
             for (Project p : projects) {
                 StringBuilder roomInfo = new StringBuilder();
                 if (p.getRooms() != null && !p.getRooms().isEmpty()) {
                     boolean firstRoom = true;
+                   
                     for (Room r : p.getRooms()) {
+                    	if (filteredRoomType != null && r.getRoomType() != filteredRoomType) continue;
                         if (!firstRoom) roomInfo.append(", ");
                         roomInfo.append(r.getRoomType().name())
                                .append(" (")
@@ -192,6 +206,10 @@ public class ApplicantUI {
                                .append(")");
                         firstRoom = false;
                     }
+                    if (roomInfo.length() == 0) {
+                        roomInfo.append("<No matching room types>");
+                    }
+                    
                 } else {
                     roomInfo.append("<No room info>");
                 }
@@ -394,14 +412,21 @@ public class ApplicantUI {
         System.out.println("============= Submit Enquiry ==============");
         
         List<Project> allProjects = projectManager.getProjects();
-        if (allProjects == null || allProjects.isEmpty()) {
+        List<Project> visibleProjects = allProjects != null?
+        		allProjects.stream()
+        				   .filter(Project::isVisibility)
+        				   .collect(Collectors.toList())
+        				   :new ArrayList<>();
+        				   
+        				   
+        if (visibleProjects == null || visibleProjects.isEmpty()) {
         	System.out.println("There are no projects available for you to submit an enquiry.");
         	return;
         }
         
         System.out.println("Available Projects:");
-        for (int i = 0; i < allProjects.size(); i++) {
-            System.out.printf(" %d. %s (%s)\n", i + 1, allProjects.get(i).getName(), allProjects.get(i).getNeighbourhood());
+        for (int i = 0; i < visibleProjects.size(); i++) {
+            System.out.printf(" %d. %s (%s)\n", i + 1, visibleProjects.get(i).getName(), visibleProjects.get(i).getNeighbourhood());
         }
         System.out.println("-------------------------------------------");
         System.out.print("Select the project you want to enquiry about (Enter 0 to exit): ");
@@ -409,13 +434,13 @@ public class ApplicantUI {
         scanner.nextLine();
         
         
-        if (projectChoice < 1 || projectChoice > allProjects.size()) {
+        if (projectChoice < 1 || projectChoice > visibleProjects.size()) {
             System.out.println("Invalid selection.");
             System.out.println();
             return;
         }
        
-        Project chosenProject = allProjects.get(projectChoice - 1);
+        Project chosenProject = visibleProjects.get(projectChoice - 1);
             	
     	System.out.println("Enter your enquiry: ");
     	String message = scanner.nextLine();
@@ -528,4 +553,10 @@ public class ApplicantUI {
         if (nric == null) return false;
         return nric.matches("^[ST]\\d{7}[A-Za-z]$");
     }
+     
+     private void manageFilters() {
+    	    FilterUI.promptFilterSettings(scanner, filter);
+    	    filterManager.setFilter(applicant.getNRIC(), filter);
+    	    filterManager.saveFilters();
+     }
 }

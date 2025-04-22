@@ -1,6 +1,7 @@
 package control;
 
 import entities.Applicant;
+import entities.Officer;
 import entities.Project;
 import entities.Room;
 import enums.RoomType;
@@ -76,6 +77,41 @@ public class ApplicantManager {
                 availableProjects.add(p);
             }
         }
+        return availableProjects;
+    }
+    
+    public List<Project> getAvailableProjectsForOfficer(Officer officer) {
+        List<Project> allProjects = projectManager.getProjects();
+        List<Project> availableProjects = new ArrayList<>();
+        LocalDate today = LocalDate.now();
+
+        for (Project p : allProjects) {
+            // Officers must not have applied for the project before
+            if (officer.getAppliedProject() != null &&
+                officer.getAppliedProject().getName().equalsIgnoreCase(p.getName())) {
+                continue;
+            }
+
+            // Officers can't register for projects they're already handling
+            if (officer.getRegisteredProjects().stream()
+                    .anyMatch(registered -> registered.getName().equalsIgnoreCase(p.getName()))) {
+                continue;
+            }
+
+            // Must not overlap with existing officer project (date-wise)
+            boolean overlaps = officer.getRegisteredProjects().stream().anyMatch(registered -> {
+                return !(p.getCloseDate().isBefore(registered.getOpenDate()) ||
+                         p.getOpenDate().isAfter(registered.getCloseDate()));
+            });
+            
+            // Project must be visible and within application period
+            if (!p.isVisibility()) continue;
+            if (p.getOpenDate() == null || p.getCloseDate() == null) continue;
+            if (today.isBefore(p.getOpenDate()) || today.isAfter(p.getCloseDate())) continue;
+
+            availableProjects.add(p);
+        }
+
         return availableProjects;
     }
 

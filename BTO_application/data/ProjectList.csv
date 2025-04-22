@@ -1,5 +1,5 @@
 Project Name,Neighbourhood,Type 1,Num Units 1,Available Units 1,Price 1,Type 2,Num Units 2,Available Units 2,Price 2,Open Date,Close Date,Manager Name,Officer Slots,Officer Name,Visibility
 Acacia Breeze,Yishun,TwoRoom,2,2,350000.0,ThreeRoom,3,3,450000.0,15/2/25,20/3/25,Jessica,3,,false
-Suites,sengkang,TwoRoom,98,98,4800000.0,ThreeRoom,50,50,5000000.0,11/4/25,30/6/25,Jessica,1,,false
+Suites,sengkang,TwoRoom,98,98,4800000.0,ThreeRoom,50,50,5000000.0,11/4/25,30/6/25,Jessica,1,,true
 bishan condo,bishan,TwoRoom,0,0,2000000.0,ThreeRoom,2,1,3000000.0,12/4/25,20/6/25,Michael,2,,true
 Sengkang Rise,SengKang,TwoRoom,10,10,500000.0,ThreeRoom,5,5,700000.0,21/6/25,21/7/25,Michael,2,,false
