@@ -9,3 +9,11 @@
 
 ```bash
 cd /Users/janjaem/git/repository/BTO_application
+```
+### 2. If cloned from github
+```bash
+git clone https://github.com/yourusername/SC2002-FDAD-GRP3-.git
+```
+```bash
+cd SC2002-FDAD-GRP3-/BTO_application
+```
