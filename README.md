@@ -1,7 +1,8 @@
 # BTO System Management Application
-<img width="637" alt="image" src="https://github.com/user-attachments/assets/5b100708-4508-4d1f-b1d1-ebf974f5b08b" />
+<img width="637" alt="image" src="https://github.com/user-attachments/assets/5b100708-4508-4d1f-b1d1-ebf974f5b08b" style="border-radius: 12px;"/>
 
 ## SC2002-FDAD-Group 3
+> Login Page
 <img width="486" alt="image" src="https://github.com/user-attachments/assets/29f4d2f4-9f92-4018-bf45-e63ab8e75cc7" />
 
 ## Project Structure overview: 
