@@ -9,21 +9,9 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 
 import auth.LoginManager;
-import control.ApplicantManager;
-import control.ApplicationManager;
-import control.EnquiryManager;
-import control.FilterManager;
-import control.UserManager;
-import control.ViewProjectFilter;
-import control.ProjectManager;
-import entities.Applicant;
-import entities.Enquiry;
-import entities.Filter;
-import entities.Project;
-import entities.Room;
-import entities.User;
-import enums.ApplicationStatus;
-import enums.RoomType;
+import control.*;
+import entities.*;
+import enums.*;
 
 public class ApplicantUI {
 
