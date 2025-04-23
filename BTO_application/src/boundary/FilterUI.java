@@ -35,6 +35,7 @@ public class FilterUI {
                     RoomType[] values = RoomType.values();
                     for (int i = 0; i < values.length; i++)
                         System.out.println((i + 1) + ". " + values[i]);
+                    System.out.print("Enter your preferred room type: ");
                     int sel = scanner.nextInt(); scanner.nextLine();
                     if (sel > 0 && sel <= values.length)
                         filter.setRoomType(values[sel - 1]);
