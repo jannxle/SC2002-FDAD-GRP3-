@@ -11,14 +11,26 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-
+/**
+ * Manages the generation of reports based on BTO application data.
+ * Specifically handles creating reports of applicants who have booked flats,
+ * allowing for filtering based on criteria like marital status or room type.
+ */
 public class ReportManager {
 
     private final UserManager<Applicant> applicantUserManager;
     private final UserManager<Officer> officerUserManager;
     private final ApplicationManager applicationManager;
 
-
+    /**
+     * Constructs a ReportManager.
+     * Requires instances of UserManagers and ApplicationManager to access necessary data.
+     *
+     * @param applicantUserManager The manager for applicant user data.
+     * @param officerUserManager   The manager for officer user data.
+     * @param applicationManager   The manager for application data.
+     * @throws IllegalArgumentException if any manager dependency is null.
+     */
     public ReportManager(UserManager<Applicant> applicantUserManager,
                          UserManager<Officer> officerUserManager,
                          ApplicationManager applicationManager) {
@@ -30,6 +42,10 @@ public class ReportManager {
         this.applicationManager = applicationManager;
     }
 
+    /**
+     * Defines the criteria for filtering the booking report.
+     * Allows filtering by marital status and/or room type.
+     */
     public static class FilterCriteria {
         private Boolean maritalStatusFilter = null;
         private RoomType roomTypeFilter = null;
@@ -41,7 +57,13 @@ public class ReportManager {
         public boolean hasFilters() { return maritalStatusFilter != null || roomTypeFilter != null; }
     }
 
-
+    /**
+     * Generates a booking report containing applicants with status BOOKED.
+     * Filters the applicants based on the provided FilterCriteria.
+     *
+     * @param criteria The criteria (marital status, room type) to filter the report by. Can be null for no filtering.
+     * @return A Report object containing the filtered list of booked applicants and report metadata.
+     */
     public Report generateBookingReport(FilterCriteria criteria) {
 
         List<Applicant> bookedApplicants = applicationManager.getAllApplicants().stream()

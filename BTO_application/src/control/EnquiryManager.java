@@ -7,15 +7,31 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Iterator;
 
+/**
+ * Manages the creation, retrieval, modification, and persistence of Enquiry objects.
+ * Handles loading enquiries from and saving them to `enquiries.csv`.
+ * Provides methods for submitting, replying to, editing, and deleting enquiries.
+ */
 public class EnquiryManager {
 
     private List<Enquiry> allEnquiries = new ArrayList<>();
     private static final String FILE_PATH = "data/enquiries.csv";
 
+    /**
+     * Loads enquiries from the default CSV file path.
+     */
     public void loadEnquiries() {
         loadEnquiries(FILE_PATH);
     }
 
+    /**
+     * Loads enquiry data from the specified CSV file path.
+     * Clears current enquiries. Parses lines into Enquiry objects,
+     * handling potential CSV formatting issues and parsing errors.
+     * Format: applicantNRIC,applicantName,Project,Message,Reply,ReplyingBy
+     *
+     * @param filePath The path to the CSV file containing enquiry data.
+     */
     public void loadEnquiries(String filePath) {
         allEnquiries.clear();
         List<String> lines = FileManager.readFile(filePath);
@@ -57,10 +73,20 @@ public class EnquiryManager {
         }
     }
 
+    /**
+     * Saves the current list of enquiries to the default CSV file path.
+     */
     public void saveEnquiries() {
         saveEnquiries(FILE_PATH);
     }
 
+    /**
+     * Saves the current list of Enquiry objects to the specified CSV file path.
+     * Overwrites the existing file. Formats each enquiry using CSV escaping rules.
+     * Format: applicantNRIC,applicantName,Project,Message,Reply,ReplyingBy
+     *
+     * @param filePath The path to the CSV file where enquiry data should be saved.
+     */
     public void saveEnquiries(String filePath) {
         List<String> lines = new ArrayList<>();
         lines.add("applicantNRIC,applicantName,Project,Message,Reply,ReplyingBy");
@@ -77,6 +103,11 @@ public class EnquiryManager {
         FileManager.writeFile(filePath, lines);
     }
 
+    /**
+     * Adds a new enquiry to the in-memory list.
+     *
+     * @param enquiry The Enquiry object to submit. Must not be null.
+     */
     public void submitEnquiry(Enquiry enquiry) {
         if (enquiry != null) {
              allEnquiries.add(enquiry);
@@ -86,6 +117,12 @@ public class EnquiryManager {
         }
     }
 
+    /**
+     * Retrieves all enquiries submitted by a specific applicant, identified by NRIC.
+     *
+     * @param applicantNRIC The NRIC of the applicant whose enquiries are requested.
+     * @return A List of Enquiry objects submitted by the applicant. Returns an empty list if NRIC is invalid or no enquiries are found.
+     */
     public List<Enquiry> getEnquiriesByApplicant(String applicantNRIC) {
         List<Enquiry> applicantEnquiries = new ArrayList<>();
         if (applicantNRIC == null || applicantNRIC.trim().isEmpty()) {
@@ -99,6 +136,12 @@ public class EnquiryManager {
         return applicantEnquiries;
     }
 
+    /**
+     * Retrieves all enquiries related to a specific project, identified by project name.
+     *
+     * @param projectName The name of the project whose enquiries are requested.
+     * @return A List of Enquiry objects for the project. Returns an empty list if name is invalid or no enquiries are found.
+     */
     public List<Enquiry> getEnquiriesByProject(String projectName) {
         List<Enquiry> projectEnquiries = new ArrayList<>();
          if (projectName == null || projectName.trim().isEmpty()) {
@@ -112,6 +155,14 @@ public class EnquiryManager {
         return projectEnquiries;
     }
 
+    /**
+     * Adds or updates the reply for a given enquiry.
+     * Sets the reply message and the name of the replying officer/manager.
+     *
+     * @param enquiry     The Enquiry object to reply to.
+     * @param reply       The content of the reply message.
+     * @param officerName The name of the HDB staff member providing the reply.
+     */
     public void replyToEnquiry(Enquiry enquiry, String reply, String officerName) {
         if (enquiry != null) {
             enquiry.setReply(reply, officerName);
@@ -121,6 +172,15 @@ public class EnquiryManager {
         }
     }
 
+    /**
+     * Edits the message of an existing enquiry, provided it hasn't been replied to yet.
+     * Requires the NRIC of the editor to verify ownership.
+     *
+     * @param enquiry    The Enquiry to edit.
+     * @param newMessage The new message content.
+     * @param editorNric The NRIC of the user attempting the edit (must match applicant NRIC).
+     * @return true if the enquiry was successfully edited, false otherwise (e.g., permission denied, already replied).
+     */
     public boolean editEnquiry(Enquiry enquiry, String newMessage, String editorNric) {
         if (enquiry == null || newMessage == null || editorNric == null) {
             System.err.println("Cannot edit enquiry: null parameter provided.");
@@ -143,6 +203,14 @@ public class EnquiryManager {
         return true;
     }
 
+    /**
+     * Deletes an enquiry, provided it hasn't been replied to yet.
+     * Requires the NRIC of the deleter to verify ownership.
+     *
+     * @param enquiryToDelete The Enquiry to delete.
+     * @param deleterNric   The NRIC of the user attempting deletion (must match applicant NRIC).
+     * @return true if the enquiry was successfully deleted, false otherwise (e.g., permission denied, already replied, not found).
+     */
     public boolean deleteEnquiry(Enquiry enquiryToDelete, String deleterNric) {
         if (enquiryToDelete == null || deleterNric == null) {
              System.err.println("Cannot delete enquiry: null parameter provided.");
@@ -180,10 +248,23 @@ public class EnquiryManager {
         return removed;
     }
 
+    /**
+     * Retrieves the current in-memory list of all enquiries loaded into the manager.
+     *
+     * @return A List containing all Enquiry objects.
+     */
     public List<Enquiry> getAllEnquiries() {
         return allEnquiries;
     }
 
+    /**
+     * Escapes a string field for CSV output according to standard rules.
+     * Wraps fields containing commas, quotes, or newlines in double quotes,
+     * and escapes internal double quotes by doubling them ("").
+     *
+     * @param field The string field to escape.
+     * @return The properly escaped string for CSV, or an empty string if input is null.
+     */
     private String escapeCsvField(String field) {
         if (field == null) {
             return ""; // Represent null as empty string in CSV
@@ -199,6 +280,14 @@ public class EnquiryManager {
         return field;
     }
 
+    /**
+     * Unescapes a string field read from a CSV file.
+     * Removes surrounding double quotes if present and replaces doubled internal quotes ("")
+     * with single quotes ("). Basic implementation.
+     *
+     * @param field The potentially escaped string field from CSV.
+     * @return The unescaped string, or the original string if no escaping was detected. Returns null if input is null.
+     */
     private String unescapeCsvField(String field) {
         if (field == null) {
             return null;

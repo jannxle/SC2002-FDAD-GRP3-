@@ -199,14 +199,13 @@ public class ApplicationManager {
    }
 
     /**
-     * Approves an applicant's request to withdraw their application (status PENDING_WITHDRAWAL).
-     * If the original application status involved a booked/allocated unit (implicitly, as withdrawal is allowed from BOOKED),
-     * this method attempts to increment the room availability count in the project.
-     * Clears the applicant's application details (project, room) and sets their status to null (or UNSUCCESSFUL, depending on desired logic post-withdrawal).
+     * Rejects a PENDING BTO application.
+     * Changes the applicant's status to UNSUCCESSFUL.
+     * Clears the applicant's applied project and chosen room details.
      * Saves the updated applicant state and application list.
      *
-     * @param applicant The applicant whose PENDING_WITHDRAWAL request is being approved.
-     * @return true if the withdrawal was successfully approved, false otherwise.
+     * @param applicant The applicant whose PENDING application is to be rejected.
+     * @return true if the application was successfully rejected, false otherwise (e.g., applicant null or status not PENDING).
      */
     public boolean rejectApplication(Applicant applicant) {
           if (applicant == null || applicant.getStatus() != ApplicationStatus.PENDING) {
@@ -226,13 +225,14 @@ public class ApplicationManager {
     }
 
     /**
-     * Rejects an applicant's request to withdraw their application (status PENDING_WITHDRAWAL).
-     * Reverts the applicant's status back to what it likely was before the withdrawal request
-     * (assumed to be SUCCESSFUL, as withdrawal from PENDING/BOOKED might lead to approval).
-     * Saves the updated applicant state.
+     * Approves an applicant's request to withdraw their application (status PENDING_WITHDRAWAL).
+     * If the original application status involved a booked/allocated unit (implicitly, as withdrawal is allowed from BOOKED),
+     * this method attempts to increment the room availability count in the project.
+     * Clears the applicant's application details (project, room) and sets their status to null or UNSUCCESSFUL.
+     * Saves the updated applicant state and application list.
      *
-     * @param applicant The applicant whose PENDING_WITHDRAWAL request is being rejected.
-     * @return true if the withdrawal rejection was successful, false otherwise.
+     * @param applicant The applicant whose PENDING_WITHDRAWAL request is being approved.
+     * @return true if the withdrawal was successfully approved, false otherwise.
      */
     public boolean approveWithdrawal(Applicant applicant) {
         if (applicant == null || applicant.getStatus() != ApplicationStatus.PENDING_WITHDRAWAL) {
@@ -261,6 +261,15 @@ public class ApplicationManager {
         return true;
     }
 
+    /**
+     * Rejects an applicant's request to withdraw their application (status PENDING_WITHDRAWAL).
+     * Reverts the applicant's status back to what it likely was before the withdrawal request
+     * (assumed to be SUCCESSFUL, as withdrawal from PENDING/BOOKED might lead to approval).
+     * Saves the updated applicant state.
+     *
+     * @param applicant The applicant whose PENDING_WITHDRAWAL request is being rejected.
+     * @return true if the withdrawal rejection was successful, false otherwise.
+     */
     public boolean rejectWithdrawal(Applicant applicant) {
          if (applicant == null || applicant.getStatus() != ApplicationStatus.PENDING_WITHDRAWAL) {
             System.err.println("Withdrawal rejection failed: Applicant is null or status is not PENDING_WITHDRAWAL.");
@@ -272,7 +281,12 @@ public class ApplicationManager {
         return true;
     }
 
-
+    /**
+     * Saves the current state of the applicant and their application details.
+     * This method is called after any changes to the applicant's status or application details.
+     *
+     * @param applicant The applicant whose state is to be saved.
+     */
     private void saveApplicantUserState(Applicant applicant) {
          if (applicant instanceof Officer) {
              if (officerUserManager != null) {
@@ -290,6 +304,14 @@ public class ApplicationManager {
         saveApplications(APPLICATIONS_FILE_PATH, getAllApplicants());
     }
 
+    /**
+     * Updates the status of an applicant and saves their state.
+     * This method is called when an officer or manager updates the status of an applicant.
+     *
+     * @param applicant The applicant whose status is to be updated.
+     * @param newStatus The new status to set for the applicant.
+     * @return true if the status was successfully updated and saved, false otherwise.
+     */
     public boolean updateAndSaveApplicantStatus(Applicant applicant, ApplicationStatus newStatus) {
         if (applicant == null) {
              System.err.println("Cannot update status for null applicant.");
@@ -301,7 +323,15 @@ public class ApplicationManager {
         return true;
     }
 
-    // Load/Save for Applications.csv
+    /**
+     * Saves the current application data for all relevant applicants to a CSV file.
+     * Only includes applicants who have an active application (status is not null and not UNSUCCESSFUL).
+     * Writes a header row followed by data rows.
+     * Format: NRIC,Name,ProjectName,RoomType,Status
+     *
+     * @param filePath   The path to the CSV file to write to.
+     * @param applicants The list of all applicants (including officers) whose applications should be considered for saving.
+     */
     public void saveApplications(String filePath, List<Applicant> applicants) {
         List<String> lines = new ArrayList<>();
         lines.add("NRIC,Name,ProjectName,RoomType,Status");
@@ -319,7 +349,19 @@ public class ApplicationManager {
         FileManager.writeFile(filePath, lines);
     }
 
-
+    /**
+     * Loads application data from a specified CSV file and links it to the provided lists
+     * of applicants and projects.
+     * Skips the header row and parses each subsequent line.
+     * Finds the corresponding applicant and project objects based on NRIC and project name.
+     * Sets the `appliedProject`, `chosenRoom`, and `status` on the applicant object.
+     * Handles potential parsing errors (e.g., invalid enum values, missing objects).
+     * Format: NRIC,Name,ProjectName,RoomType,Status
+     *
+     * @param filePath   The path to the CSV file containing application data.
+     * @param applicants A list of all potential applicants (including officers) to link data to.
+     * @param projects   A list of all projects to link data to.
+     */
     public void loadApplications(String filePath, List<Applicant> applicants, List<Project> projects) {
         List<String> lines = FileManager.readFile(filePath);
         if (lines == null || lines.size() <= 1) {

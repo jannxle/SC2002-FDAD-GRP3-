@@ -8,16 +8,35 @@ import utils.FileManager;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Manages Officer user data, implementing the UserManager interface.
+ * Handles loading/saving officer details, including their project registrations and statuses,
+ * from/to `OfficerList.csv`. Requires ProjectManager to link project names to objects.
+ */
 public class OfficerUserManager implements UserManager<Officer> {
 
     private List<Officer> officers = new ArrayList<>();
     private static final String FILE_PATH = "data/OfficerList.csv";
     private ProjectManager projectManager;
     
+    /**
+     * Constructs an OfficerUserManager.
+     * Requires a ProjectManager instance to link registered project names from the CSV
+     * to actual Project objects during loading.
+     *
+     * @param projectManager The manager for accessing project data.
+     */
     public OfficerUserManager(ProjectManager projectManager) {
     	this.projectManager = projectManager;
     }
 
+    /**
+     * Loads officer data from the CSV file.
+     * Clears current officers. Parses lines into Officer objects, including
+     * semicolon-separated registered project names and their corresponding statuses.
+     * Uses ProjectManager to find Project objects. Handles parsing errors.
+     * Format: Name,NRIC,Age,Status,Password,RegisteredProjects,RegistrationStatuses
+     */
     @Override
     public void loadUsers() {
         officers.clear();
@@ -70,6 +89,12 @@ public class OfficerUserManager implements UserManager<Officer> {
         }
     }
 
+    /**
+     * Saves the current list of Officer objects to the CSV file.
+     * Overwrites the existing file. Formats officer details including semicolon-separated
+     * lists of registered project names and their statuses.
+     * Format: Name,NRIC,Age,Status,Password,RegisteredProjects,RegistrationStatuses
+     */
     @Override
     public void saveUsers() {
         List<String> lines = new ArrayList<>();
@@ -98,11 +123,22 @@ public class OfficerUserManager implements UserManager<Officer> {
         FileManager.writeFile(FILE_PATH, lines);
     }
 
+    /**
+     * Retrieves the current in-memory list of all loaded officers.
+     *
+     * @return A List containing all Officer objects.
+     */
     @Override
     public List<Officer> getUsers() {
         return officers;
     }
 
+    /**
+     * Finds and returns an officer based on their NRIC.
+     *
+     * @param nric The NRIC of the officer to find.
+     * @return The Officer object if found, or null otherwise.
+     */
     @Override
     public Officer findByNRIC(String nric) {
         for (Officer officer : officers) {
@@ -113,6 +149,14 @@ public class OfficerUserManager implements UserManager<Officer> {
         return null;
     }
 
+    /**
+     * Changes the password for the officer identified by the given NRIC.
+     * Saves the updated officer list if the change is successful.
+     *
+     * @param nric        The NRIC of the officer whose password should be changed.
+     * @param newPassword The new password to set.
+     * @return true if the password was successfully updated and saved, false otherwise.
+     */
     @Override
     public boolean changePassword(String nric, String newPassword) {
         Officer user = findByNRIC(nric);
@@ -128,6 +172,14 @@ public class OfficerUserManager implements UserManager<Officer> {
         return false;
     }
     
+    /**
+     * Updates the list of assigned officers in the `ProjectList.csv` file for a given project.
+     * Appends the officer's name (if not already present) to the 'Officer Name' column
+     * for the specified project row.
+     *
+     * @param project     The project whose officer list needs updating in the CSV.
+     * @param officerName The name of the officer to add to the project's officer list.
+     */
     public void updateProjectListCSV(Project project, String officerName) {
         List<String> lines = FileManager.readFile("data/ProjectList.csv");
         if (lines == null || lines.size() <= 1) return;

@@ -12,31 +12,50 @@ import java.util.Map;
 import entities.Filter;
 import enums.RoomType;
 
+/**
+ * Manages user-specific filter preferences for viewing BTO projects.
+ * Handles loading saved filters from a CSV file, retrieving filters for a user,
+ * setting filters for a user, and saving all filters back to the CSV file.
+ */
 public class FilterManager {
 	private Map<String, Filter> userFilters = new HashMap<>();
     private final String filePath;
     
+    /**
+     * Constructs a FilterManager and loads existing filter settings from the specified file path.
+     *
+     * @param filePath The path to the CSV file used for storing and loading filter settings.
+     */
     public FilterManager(String filePath) {
     	this.filePath = filePath;
     	loadFilters();
     }
     
     /**
-     * Returns the saved filters for a user by NRIC, or default if not found.
+     * Retrieves the saved filter settings for a specific user.
+     * If no filter is saved for the user, a default Filter object (with no criteria set) is returned.
+     *
+     * @param nric The NRIC of the user whose filter settings are requested.
+     * @return The Filter object for the user, or a default Filter if none exists.
      */
     public Filter getFilter(String nric) {
         return userFilters.getOrDefault(nric, new Filter());
     }
 
     /**
-     * Saves filter settings for a given user.
+     * Sets or updates the filter settings for a specific user.
+     *
+     * @param nric   The NRIC of the user whose filter is being set.
+     * @param filter The Filter object containing the desired settings.
      */
     public void setFilter(String nric, Filter filter) {
         userFilters.put(nric, filter);
     }
 
     /**
-     * Writes all filter settings to the CSV file.
+     * Saves the current filter settings for all users to the CSV file.
+     * Overwrites the existing file content.
+     * Format: NRIC,Neighbourhood,RoomType
      */
     public void saveFilters() {
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(filePath))) {
@@ -55,7 +74,10 @@ public class FilterManager {
     }
 
     /**
-     * Loads all filter settings from the CSV file.
+     * Loads filter settings from the CSV file into memory.
+     * Clears existing in-memory filters before loading.
+     * Handles file not found errors and potential issues during parsing.
+     * Format: NRIC,Neighbourhood,RoomType
      */
     public void loadFilters() {
         File file = new File(filePath);
