@@ -2,8 +2,7 @@
 ## SC2002-FDAD-Group 3
 
 ## Project Structure overview: 
-
-![Uploading image.png…]()
+<img width="515" alt="image" src="https://github.com/user-attachments/assets/b2a019b9-374d-40cc-9a8f-9da646f8a761" />
 
 
 ## Scripts
