@@ -8,14 +8,28 @@ import java.util.ArrayList;
 import java.util.List;
 
 import auth.LoginManager;
-import entities.Applicant;
-import entities.Officer;
-import entities.Manager;
+import entities.*;
 
-
+/**
+ * The main entry point for the BTO Management System application.
+ * This class initializes all necessary components, loads initial data
+ * from CSV files, starts the user login process, and ensures data is saved
+ * back to the CSV files upon application exit.
+ */
 public class Main {
 
-    public static void main(String[] args) { //
+    /**
+     * The main method that starts the BTO Management System.
+     *
+     * Initializes all manager classes (ProjectManager, UserManagers, ApplicationManager, etc.).
+     * Loads data from various CSV files (Projects, Users, Applications, Enquiries, Filters).
+     * Displays the current date and a welcome banner.
+     * Instantiates and starts the LoginManager to handle user authentication and UI navigation.
+     * Upon termination of the login loop (application exit), it saves all potentially modified data back to their respective CSV files.
+     *
+     * @param args Command line arguments.
+     */
+    public static void main(String[] args) {
 
         System.out.println("Initializing BTO Management System...");
 
@@ -38,8 +52,6 @@ public class Main {
         applicantUserManager.loadUsers();
         officerUserManager.loadUsers();
         managerUserManager.loadUsers();
-
-        
 
         enquiryManager.loadEnquiries();
 

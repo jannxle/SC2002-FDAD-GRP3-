@@ -102,6 +102,7 @@ public class HDBOfficerUI extends ApplicantUI {
                     allApplicants.addAll(applicantUserManager.getUsers());
                     allApplicants.addAll(officerUserManager.getUsers());
                     applicationManager.saveApplications("data/applications.csv", allApplicants);
+                    projectManager.saveProjects("data/ProjectList.csv");
                     break;
                 case 4:
                     viewApplicationStatus(); // Inherited from ApplicantUI
@@ -204,36 +205,149 @@ public class HDBOfficerUI extends ApplicantUI {
         displayProjectListWithRooms(projects);
     }
    
+    /**
+     * Overrides the applicant's applyForProject method to add checks specific to HDB Officers.
+     * An officer cannot apply for a project if:
+     * 1. They are already registered (PENDING or APPROVED) for that SAME project.
+     * 2. They are already registered (PENDING or APPROVED) for ANOTHER project whose
+     * application period overlaps with the target project's application period.
+     * If these checks pass, it proceeds with the standard application logic inherited
+     * from ApplicantUI.
+     */
+    @Override
     protected void applyForProject() {
-        // First check if this officer is assigned to any active projects
-        List<Project> officerProjects = officer.getRegisteredProjects();
-        
-        // Filter to only include projects with overlapping application periods (current date is between open and close dates)
-        List<Project> activeOfficerProjects = new ArrayList<>();
-        LocalDate currentDate = LocalDate.now();
-        
-        for (Project p : officerProjects) {
-            // Check if current date is between open and close dates (inclusive)
-            if ((p.getOpenDate().isBefore(currentDate) || p.getOpenDate().isEqual(currentDate)) && 
-                (p.getCloseDate().isAfter(currentDate) || p.getCloseDate().isEqual(currentDate))) {
-                activeOfficerProjects.add(p);
-            }
-        }
-        
-        // If officer is currently assigned to any active projects, prevent application
-        if (!activeOfficerProjects.isEmpty()) {
-        	System.out.println();
-            System.out.println("As an HDB Officer currently assigned to active projects, you cannot apply for BTO projects.");
-            System.out.println("Your officer assignments during the current application period:");
-            for (Project p : activeOfficerProjects) {
-                System.out.println("- " + p.getName() + " (" + p.getOpenDate() + " to " + p.getCloseDate() + ")");
-            }
+        System.out.println("========== Apply for BTO Projects (Officer Check) ================================================");
+
+        // Cannot apply if already have an active/successful application
+        if (applicant.getStatus() != null && applicant.getStatus() != ApplicationStatus.UNSUCCESSFUL) {
+            System.out.println("You already have an active or successful application (Status: " + applicant.getStatus() + ").");
+            System.out.println("Please withdraw it first if you wish to apply for a different project.");
             return;
         }
-        
-        // If not currently assigned as an officer, proceed with regular application process
-        super.applyForProject();
+
+        List<Project> projects = applicantManager.getAvailableProjects(this.applicant);
+        if (projects.isEmpty()) {
+            System.out.println("There are currently no projects available for you to apply for based on eligibility.");
+            return;
+        }
+        displayProjectListWithRooms(projects);
+
+        System.out.print("Enter the exact name of the project you wish to apply for (or leave blank to cancel): ");
+        String projectName = scanner.nextLine().trim();
+
+        if (projectName.isEmpty()) {
+            System.out.println("Application cancelled.");
+            return;
+        }
+
+        Project selectedProject = null;
+        for (Project p : projects) {
+            if (p.getName().equalsIgnoreCase(projectName)) {
+                selectedProject = p;
+                break;
+            }
+        }
+
+        if (selectedProject == null) {
+            System.out.println("Project '" + projectName + "' not found in the list of projects available to you.");
+            return;
+        }
+
+        // --- Officer-Specific Checks ---
+        List<Project> officerRegisteredProjects = officer.getRegisteredProjects();
+        LocalDate targetOpen = selectedProject.getOpenDate();
+        LocalDate targetClose = selectedProject.getCloseDate();
+
+        if (targetOpen == null || targetClose == null) {
+            System.err.println("Application failed: The selected project '" + selectedProject.getName() + "' has invalid application dates.");
+            return;
+        }
+
+        for (Project registeredProject : officerRegisteredProjects) {
+            OfficerRegistrationStatus regStatus = officer.getRegistrationStatusForProject(registeredProject);
+
+            // Check only against PENDING or APPROVED registrations
+            if (regStatus == OfficerRegistrationStatus.PENDING || regStatus == OfficerRegistrationStatus.APPROVED) {
+
+                // Check: Is it the SAME project?
+                if (registeredProject.equals(selectedProject)) {
+                    System.out.println("\nApplication failed: You cannot apply for project '" + selectedProject.getName() +
+                                       "' because you have a " + regStatus + " registration to handle it.");
+                    return;
+                }
+
+                // Check: Does the application period of ANOTHER registered project overlap?
+                LocalDate existingOpen = registeredProject.getOpenDate();
+                LocalDate existingClose = registeredProject.getCloseDate();
+
+                if (existingOpen != null && existingClose != null) {
+                    // Check for overlap: !(targetEnd < existingStart || targetStart > existingEnd)
+                    boolean overlaps = !(targetClose.isBefore(existingOpen) || targetOpen.isAfter(existingClose));
+                    if (overlaps) {
+                        System.out.println("\nApplication failed: The application period for '" + selectedProject.getName() +
+                                           "' (" + formatDate(targetOpen) + " to " + formatDate(targetClose) +
+                                           ") overlaps with your " + regStatus + " registration for project '" +
+                                           registeredProject.getName() + "' (" + formatDate(existingOpen) + " to " + formatDate(existingClose) + ").");
+                        return;
+                    }
+                }
+            }
+        }
+
+        System.out.println("Officer checks passed. Proceeding with application...");
+
+        // Get eligible room types for the selected project based on applicant criteria
+        List<RoomType> eligibleRoomTypes = getEligibleRoomTypesForProject(applicant, selectedProject);
+
+        if (eligibleRoomTypes.isEmpty()) {
+             System.out.println("There are no eligible room types for you in project '" + selectedProject.getName() + "'.");
+             return;
+        }
+
+        System.out.println("Eligible Room Types for Project '" + selectedProject.getName() + "':");
+        for (int i = 0; i < eligibleRoomTypes.size(); i++) {
+            System.out.println((i + 1) + ". " + eligibleRoomTypes.get(i).name());
+        }
+        System.out.print("Select the number for the room type you want to apply for (0 to cancel): ");
+        int roomChoice = -1;
+        try {
+            roomChoice = scanner.nextInt();
+        } catch (InputMismatchException e) {}
+        finally {
+            scanner.nextLine();
+        }
+
+        if (roomChoice <= 0 || roomChoice > eligibleRoomTypes.size()) {
+            System.out.println("Application cancelled or invalid choice.");
+            return;
+        }
+
+        RoomType chosenRoom = eligibleRoomTypes.get(roomChoice - 1);
+
+        // Check room availability before submitting
+        Room selectedRoom = null;
+        for (Room r : selectedProject.getRooms()) {
+            if (r.getRoomType() == chosenRoom) {
+                selectedRoom = r;
+                break;
+            }
+        }
+
+        if (selectedRoom == null || selectedRoom.getAvailableRooms() <= 0) {
+            System.out.println("Sorry, there are no more available units for " + chosenRoom + " in project '" + selectedProject.getName() + "'.");
+            return;
+        }
+
+        // Proceed with application via ApplicationManager
+        boolean success = applicationManager.apply(this.applicant, selectedProject, chosenRoom);
+
+        if (success) {
+            System.out.println("Application submitted successfully. Status is PENDING.");
+        } else {
+            System.out.println("Application submission failed (check ApplicationManager logs or previous messages).");
+        }
     }
+
 
     // Officer-Specific Method Implementations
     private void registerToHandleProject() {

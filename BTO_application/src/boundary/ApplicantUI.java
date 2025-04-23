@@ -307,22 +307,22 @@ public class ApplicantUI {
      
     }
 
-     private List<RoomType> getEligibleRoomTypesForProject(Applicant applicant, Project project) {
-         List<RoomType> eligibleTypes = new ArrayList<>();
-         if (project == null || project.getRooms() == null) return eligibleTypes;
+    protected List<RoomType> getEligibleRoomTypesForProject(Applicant applicant, Project project) {
+        List<RoomType> eligibleTypes = new ArrayList<>();
+        if (project == null || project.getRooms() == null) return eligibleTypes;
 
-         for (Room room : project.getRooms()) {
-              RoomType type = room.getRoomType();
-              boolean canApply = false;
-              if (!applicant.isMarried() && applicant.getAge() >= 35) {
-                  if (type == RoomType.TwoRoom) canApply = true;
-              } else if (applicant.isMarried() && applicant.getAge() >= 21) {
-                   canApply = true;
-              }
-              if (canApply) eligibleTypes.add(type);
-         }
-         return eligibleTypes;
-     }
+        for (Room room : project.getRooms()) {
+            RoomType type = room.getRoomType();
+            boolean canApply = false;
+            if (!applicant.isMarried() && applicant.getAge() >= 35) {
+                if (type == RoomType.TwoRoom) canApply = true;
+            } else if (applicant.isMarried() && applicant.getAge() >= 21) {
+                canApply = true;
+            }
+            if (canApply) eligibleTypes.add(type);
+        }
+        return eligibleTypes;
+    }
 
 
     protected void viewApplicationStatus() {

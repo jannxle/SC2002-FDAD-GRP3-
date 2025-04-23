@@ -6,8 +6,23 @@ import java.util.Scanner;
 import entities.Filter;
 import enums.RoomType;
 
+/**
+ * Provides the command-line user interface elements for managing project view filters.
+ * This class contains static methods that interact with the user to set or reset
+ * filter criteria based on neighbourhood and room type.
+ */
 public class FilterUI {
 
+    /**
+	 * Displays a menu to the user for managing project filter settings and prompts for input.
+	 * Allows the user to set a neighbourhood filter, set a room type filter, reset all filters,
+	 * or return to the previous menu. The provided Filter object is modified directly
+	 * based on user input.
+	 *
+	 * @param scanner The Scanner object used to read user input from the console.
+	 * @param filter  The Filter object representing the current user's filter settings.
+	 * This object will be updated by the method based on user choices.
+	 */
 	public static void promptFilterSettings(Scanner scanner, Filter filter) {
         while (true) {
             System.out.println("\n========= Project Filter Settings =========");

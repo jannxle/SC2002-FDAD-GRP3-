@@ -7,22 +7,58 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.ArrayList;
 
+/**
+ * Represents a generated report containing a list of applicants who have booked flats,
+ * potentially filtered by specific criteria. Includes the filters applied
+ * and the date the report was generated.
+ * This class is typically instantiated by control.ReportManager.
+ */
 public class Report {
 
     private FilterCriteria criteria;
     private List<Applicant> bookedApplicants;
     private LocalDate generationDate;
 
+    /**
+     * Constructs a new Report object.
+     * Initializes the report with the filter criteria used and the list of booked applicants
+     * that matched those criteria. Sets the generation date to the current date.
+     *
+     * @param criteria         The FilterCriteria used for generating the report.
+     * @param bookedApplicants A List of Applicant objects who have booked flats
+     * and match the criteria. If null, an empty list is used.
+     */
     public Report(FilterCriteria criteria, List<Applicant> bookedApplicants) {
         this.criteria = criteria;
         this.bookedApplicants = bookedApplicants != null ? bookedApplicants : new ArrayList<>();
         this.generationDate = LocalDate.now();
     }
 
+    /**
+     * Gets the filter criteria that were applied when generating this report.
+     * @return The {@link FilterCriteria} object, or null if no filters were used.
+     */
     public FilterCriteria getCriteria() { return criteria; }
+
+    /**
+     * Gets the list of booked applicants included in this report.
+     * @return A List of Applicant objects who have booked flats.
+     */
     public List<Applicant> getBookedApplicants() { return bookedApplicants; }
+
+    /**
+     * Gets the date when the report was generated.
+     * @return The LocalDate representing the generation date.
+     */
     public LocalDate getGenerationDate() { return generationDate; }
 
+    /**
+     * Converts the report data into a formatted string for display.
+     * The format includes headers, applicant details, and the generation date.
+     * If no applicants are found, a message indicating this is included.
+     *
+     * @return A formatted string representation of the report.
+     */
     public String toFormattedString() {
         StringBuilder report = new StringBuilder();
         String lineSeparator = System.lineSeparator();

@@ -1,2 +1,3 @@
 applicantNRIC,applicantName,Project,Message,Reply,ReplyingBy
-T7654321B,Sarah,Suites,When is my application accepted?,"soon, just wait",Jessica
+T7654321B,Sarah,Suites,When is my application accepted?,"""soon","just wait"",Jessica"
+T7654321B,Sarah,Suites,,,
