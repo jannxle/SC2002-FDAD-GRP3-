@@ -1,6 +1,11 @@
-# SC2002-FDAD-GRP3
-## Setup & Run Instructions (Terminal)
+# BTO System Management Application
+## SC2002-FDAD-Group 3
 
-This project is a Java-based BTO Management System. Follow the steps below to set up and run the program via terminal.
+## Scripts
 
----
+> How to run our project from terminal
+
+### 1. Navigate into the project folder
+
+```bash
+cd /Users/janjaem/git/repository/BTO_application
