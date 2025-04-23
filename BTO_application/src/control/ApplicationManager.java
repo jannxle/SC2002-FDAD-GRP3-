@@ -13,7 +13,10 @@ import utils.FileManager;
 import enums.ApplicationStatus;
 
 /**
- * Manages the lifecycle of BTO applications
+ * Manages the lifecycle of BTO applications within the system.
+ * This includes handling application submission, approval, rejection, withdrawal requests,
+ * and persisting application data to/from a CSV file. It interacts with ProjectManager
+ * to update room availability and UserManagers to update applicant statuses.
  */
 public class ApplicationManager {
 
@@ -22,6 +25,15 @@ public class ApplicationManager {
     private final UserManager<Applicant> applicantUserManager;
     private UserManager<Officer> officerUserManager;
 
+    /**
+     * Constructs an ApplicationManager.
+     * Requires instances of ProjectManager, ApplicantUserManager, and OfficerUserManager.
+     *
+     * @param projectManager       The manager for project data.
+     * @param applicantUserManager The manager for applicant user data.
+     * @param officerUserManager   The manager for officer user data.
+     * @throws IllegalArgumentException if any manager dependency is null.
+     */
     public ApplicationManager(ProjectManager projectManager, UserManager<Applicant> applicantUserManager, UserManager<Officer> officerUserManager) {
         if (projectManager == null || applicantUserManager == null) {
              throw new IllegalArgumentException("ProjectManager and ApplicantUserManager cannot be null.");
@@ -31,6 +43,11 @@ public class ApplicationManager {
         this.officerUserManager = officerUserManager;
     }
 
+    /**
+     * Retrieves a combined list of all users who can potentially have applications
+     *
+     * @return A new List containing all Applicant and Officer users.
+     */
     public List<Applicant> getAllApplicants() {
         List<Applicant> all = new ArrayList<>();
         all.addAll(applicantUserManager.getUsers());
@@ -38,6 +55,16 @@ public class ApplicationManager {
         return all;
     }
     
+    /**
+     * Processes a BTO application submission.
+     * Validates inputs, checks for existing active applications, and verifies room type availability.
+     * If valid, sets applicant status to PENDING and saves the application details.
+     *
+     * @param applicant  The Applicant submitting the application.
+     * @param project    The Project being applied for.
+     * @param chosenRoom The RoomType selected by the applicant.
+     * @return true if the application was successfully submitted, false otherwise.
+     */
     public boolean apply(Applicant applicant, Project project, RoomType chosenRoom) {
         if (applicant == null || project == null || chosenRoom == null) {
              System.err.println("Application failed: Applicant, project, or chosen room cannot be null.");
@@ -79,11 +106,15 @@ public class ApplicationManager {
         return true;
     }
 
-    /**
-     * Withdraws an Applicant's application.
-     * Possible for PENDING, SUCCESSFUL, or BOOKED statuses.
-     * Sets the status to UNSUCCESSFUL and clears application details.
-     * Increments room count if status was BOOKED.
+   /**
+     * Initiates the withdrawal process for an applicant's application.
+     * This method sets the application status to PENDING_WITHDRAWAL.
+     * The actual withdrawal (clearing details, potentially returning room unit) happens
+     * upon manager approval
+     * Withdrawal can only be requested if the status is PENDING, SUCCESSFUL, or BOOKED.
+     *
+     * @param applicant The applicant requesting to withdraw their application.
+     * @return true if the withdrawal request was successfully submitted (status set to PENDING_WITHDRAWAL), false otherwise.
      */
     public boolean withdrawApplication(Applicant applicant) {
         if (applicant == null) {
@@ -109,9 +140,7 @@ public class ApplicationManager {
             }
 
             // Set status to UNSUCCESSFUL and clear details
-            applicant.setStatus(ApplicationStatus.PENDING_WITHDRAWAL); //
-
-            // SAV
+            applicant.setStatus(ApplicationStatus.PENDING_WITHDRAWAL);
 
             // Trigger saving of the applicant's state
             if (applicant instanceof Officer) {
@@ -134,6 +163,15 @@ public class ApplicationManager {
         }
     }
 
+    /**
+     * Approves a PENDING BTO application.
+     * Changes the applicant's status to SUCCESSFUL.
+     * Decrements the available room count for the chosen room type in the project.
+     * Saves the updated applicant state and application list.
+     *
+     * @param applicant The applicant whose PENDING application is to be approved.
+     * @return true if the application was successfully approved, false otherwise (e.g., applicant null, status not PENDING, room update failed).
+     */
     public boolean approveApplication(Applicant applicant) {
         if (applicant == null || applicant.getStatus() != ApplicationStatus.PENDING) {
              System.err.println("Approval failed: Applicant is null or status is not PENDING.");
@@ -160,6 +198,16 @@ public class ApplicationManager {
         return true;
    }
 
+    /**
+     * Approves an applicant's request to withdraw their application (status PENDING_WITHDRAWAL).
+     * If the original application status involved a booked/allocated unit (implicitly, as withdrawal is allowed from BOOKED),
+     * this method attempts to increment the room availability count in the project.
+     * Clears the applicant's application details (project, room) and sets their status to null (or UNSUCCESSFUL, depending on desired logic post-withdrawal).
+     * Saves the updated applicant state and application list.
+     *
+     * @param applicant The applicant whose PENDING_WITHDRAWAL request is being approved.
+     * @return true if the withdrawal was successfully approved, false otherwise.
+     */
     public boolean rejectApplication(Applicant applicant) {
           if (applicant == null || applicant.getStatus() != ApplicationStatus.PENDING) {
               System.err.println("Rejection failed: Applicant is null or status is not PENDING.");
@@ -177,6 +225,15 @@ public class ApplicationManager {
          return true;
     }
 
+    /**
+     * Rejects an applicant's request to withdraw their application (status PENDING_WITHDRAWAL).
+     * Reverts the applicant's status back to what it likely was before the withdrawal request
+     * (assumed to be SUCCESSFUL, as withdrawal from PENDING/BOOKED might lead to approval).
+     * Saves the updated applicant state.
+     *
+     * @param applicant The applicant whose PENDING_WITHDRAWAL request is being rejected.
+     * @return true if the withdrawal rejection was successful, false otherwise.
+     */
     public boolean approveWithdrawal(Applicant applicant) {
         if (applicant == null || applicant.getStatus() != ApplicationStatus.PENDING_WITHDRAWAL) {
             System.err.println("Withdrawal approval failed: Applicant is null or status is not PENDING_WITHDRAWAL.");

@@ -11,14 +11,24 @@ import java.util.List;
 import java.time.LocalDate;
 
 /**
- * This class filters the list of available BTO projects based on
- * applicant eligibility criteria (age, marital status, needed room types)
- * and project visibility/application period.
+ * Manages logic related to applicants viewing BTO projects.
+ * This class filters the list of all available BTO projects based on
+ * applicant eligibility criteria (age, marital status, eligible room types)
+ * and project status (visibility 'on', within application period).
+ * It also provides specific filtering logic for HDB Officers viewing projects
+ * for potential registration.
  */
 public class ApplicantManager {
 
     private ProjectManager projectManager;
 
+    /**
+     * Constructs an ApplicantManager.
+     * Requires a ProjectManager instance to retrieve project data.
+     *
+     * @param projectManager The ProjectManager instance used to access project information.
+     * @throws IllegalArgumentException if projectManager is null.
+     */
     public ApplicantManager(ProjectManager projectManager) {
         if (projectManager == null) {
             throw new IllegalArgumentException("ProjectManager cannot be null.");
@@ -26,6 +36,14 @@ public class ApplicantManager {
         this.projectManager = projectManager;
     }
 
+    /**
+     * Retrieves a list of BTO projects available for the given applicant to apply for.
+     * Filters projects based on visibility ('on'), current application period, and
+     * applicant eligibility (Single >=35 for 2-Room only; Married >=21 for any type).
+     *
+     * @param applicant The applicant for whom to find available projects.
+     * @return A List of eligible, open, and visible Project objects, or an empty list if none match.
+     */
     public List<Project> getAvailableProjects(Applicant applicant) {
         List<Project> allProjects = projectManager.getProjects();
         List<Project> availableProjects = new ArrayList<>();
@@ -80,6 +98,21 @@ public class ApplicantManager {
         return availableProjects;
     }
     
+    /**
+     * Retrieves a list of BTO projects potentially available for an HDB Officer to register for.
+     * This method filters projects based on criteria relevant for officer registration,
+     * which might differ slightly from applicant eligibility.
+     * 
+     * Filters the projects based on:
+     * Project visibility must be 'on'.
+     * Current date must be within the project's application open and close dates.
+     * Officer must not have already applied for this project as an applicant.
+     * Officer must not already be registered (any status) for this specific project.
+     * Project's application period must not overlap with other projects the officer is registered for.
+     *
+     * @param officer The Officer for whom to find potentially available projects for registration.
+     * @return A List of Project objects that are currently open and visible, and meet basic criteria for potential registration.
+     */
     public List<Project> getAvailableProjectsForOfficer(Officer officer) {
         List<Project> allProjects = projectManager.getProjects();
         List<Project> availableProjects = new ArrayList<>();
