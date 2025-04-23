@@ -13,15 +13,25 @@
 
 > How to run our project from terminal
 
-### 1. Navigate into the project folder
-
-```bash
-cd /Users/janjaem/git/repository/BTO_application
-```
-### 2. If cloned from github
+### 1. Clone from respository
 ```bash
 git clone https://github.com/yourusername/SC2002-FDAD-GRP3-.git
 ```
 ```bash
 cd SC2002-FDAD-GRP3-/BTO_application
+```
+
+### 2. Create a bin folder for compiled files
+```bash
+mkdir bin
+```
+
+### 3. Compile the Java source file
+```bash
+javac -d bin src/**/*.java
+```
+
+### 4. Run the application
+```bash
+java -cp bin main.Main
 ```
