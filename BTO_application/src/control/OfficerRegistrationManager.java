@@ -43,6 +43,7 @@ public class OfficerRegistrationManager {
      * - Project has available officer slots.
      * - Project's application period does not overlap with other projects the officer
      * has PENDING or APPROVED registrations for.
+     * - Cannot apply to handle a project that overlaps with a project they applied to as an applicant.
      * If all checks pass, the officer's registration status for the project is set to PENDING.
      *
      * @param officer The Officer requesting registration.
@@ -122,6 +123,24 @@ public class OfficerRegistrationManager {
                     }
                 } else {
                      System.err.println("Warning: Skipping overlap check with project '" + existingProject.getName() + "' due to its invalid dates.");
+                }
+            }
+        }
+
+        // 7. Officer cannot apply to handle a project that overlaps with a project they applied to as an applicant
+        Project appliedProject = officer.getAppliedProject();
+        if (appliedProject != null) {
+            LocalDate appliedStart = appliedProject.getOpenDate();
+            LocalDate appliedEnd = appliedProject.getCloseDate();
+
+            if (appliedStart != null && appliedEnd != null) {
+                boolean overlapWithApplicantProject = !(newClose.isBefore(appliedStart) || newOpen.isAfter(appliedEnd));
+
+                if (overlapWithApplicantProject) {
+                    System.out.println("Registration failed: You applied as an applicant for project '" + appliedProject.getName() +
+                                       "' (" + appliedStart + " to " + appliedEnd + "), which overlaps with '" +
+                                       project.getName() + "' (" + newOpen + " to " + newClose + ").");
+                    return false;
                 }
             }
         }
