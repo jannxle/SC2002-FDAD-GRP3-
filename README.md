@@ -1,5 +1,5 @@
 # BTO System Management Application
-<img width="637" alt="image" src="https://github.com/user-attachments/assets/5b100708-4508-4d1f-b1d1-ebf974f5b08b" style="border-radius: 12px;"/>
+<img width="637" alt="image" src="https://github.com/user-attachments/assets/5b100708-4508-4d1f-b1d1-ebf974f5b08b"/>
 
 ## SC2002-FDAD-Group 3
 > Login Page
