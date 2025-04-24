@@ -13,6 +13,13 @@ import control.*;
 import entities.*;
 import enums.*;
 
+/**
+ * Provides the command-line user interface for users logged in as Applicants.
+ * Displays a menu of available actions and interacts with various manager classes
+ * to perform operations like viewing projects, applying, managing enquiries, etc.
+ * This class serves as the base class for HDBOfficerUI, which inherits
+ * applicant functionalities.
+ */
 public class ApplicantUI {
 
     protected Applicant applicant;
@@ -26,6 +33,20 @@ public class ApplicantUI {
     protected Filter filter;
     protected FilterManager filterManager;
 
+    /**
+     * Constructs an ApplicantUI instance.
+     * Initializes the UI with the logged-in applicant and necessary manager dependencies.
+     *
+     * @param applicant           The Applicant user for this UI session.
+     * @param applicantManager    Manager for applicant-specific project viewing logic.
+     * @param applicantUserManager Manager for applicant user data operations.
+     * @param loginManager        Manager to handle logout.
+     * @param enquiryManager      Manager for enquiries.
+     * @param applicationManager  Manager for BTO applications.
+     * @param projectManager      Manager for general project data.
+     * @param filterManager       Manager for user view filters.
+     * @throws IllegalArgumentException if any required manager or the applicant is null.
+     */
     public ApplicantUI(Applicant applicant,
                        ApplicantManager applicantManager,
                        UserManager<Applicant> applicantUserManager,
@@ -51,6 +72,11 @@ public class ApplicantUI {
         this.scanner = new Scanner(System.in);
     }
 
+    /**
+     * Displays the main menu for the Applicant dashboard and handles user input.
+     * Loops until the user chooses to log out. Calls corresponding helper methods
+     * based on user selection.
+     */
     public void showMenu() {
         boolean logout = false;
         while (!logout) {
@@ -113,6 +139,11 @@ public class ApplicantUI {
 
     // --- Helper Methods for Menu Actions ---
 
+    /**
+     * Handles the process of changing the applicant's password.
+     * Prompts for current and new passwords, validates, and calls UserManager.
+     * Redirects to login upon successful change.
+     */
     protected void changePassword() {
          System.out.println("============= Change Password =============");
          System.out.print("Enter current password: ");
@@ -152,6 +183,10 @@ public class ApplicantUI {
         }
     }
 
+    /**
+     * Retrieves and displays the list of BTO projects available to the current applicant,
+     * applying any active filters.
+     */
     protected void viewAvailableProjects() {
         System.out.println("========== Available BTO Projects for You ============================================================");
         List<Project> projects = ViewProjectFilter.apply(applicantManager.getAvailableProjects(applicant), filter);
@@ -163,6 +198,12 @@ public class ApplicantUI {
         displayProjectListWithRooms(projects);
     }
 
+    /**
+     * Displays a formatted list of projects, including details about available room types and units.
+     * Used by viewAvailableProjects and potentially applyForProject.
+     *
+     * @param projects The list of Project objects to display.
+     */
     protected void displayProjectListWithRooms(List<Project> projects) {
 
         String divider = "------------------------------------------------------------------------------------------------------";
@@ -218,6 +259,11 @@ public class ApplicantUI {
     }
 
 
+    /**
+     * Handles the process for an applicant to apply for a BTO project.
+     * Checks eligibility, displays available projects, prompts for selection,
+     * validates room choice and availability, and calls ApplicationManager.
+     */
     protected void applyForProject() {
         System.out.println("========== Apply for BTO Projects ====================================================================");
         // Cannot apply if PENDING, SUCCESSFUL, BOOKED
@@ -282,31 +328,38 @@ public class ApplicantUI {
 
         RoomType chosenRoom = eligibleRoomTypes.get(roomChoice - 1);
 
-     // Check availability before submitting
-     Room selectedRoom = null;
-     for (Room r : selectedProject.getRooms()) {
-         if (r.getRoomType() == chosenRoom) {
-             selectedRoom = r;
-             break;
-         }
-     }
+        // Check availability before submitting
+        Room selectedRoom = null;
+        for (Room r : selectedProject.getRooms()) {
+            if (r.getRoomType() == chosenRoom) {
+                selectedRoom = r;
+                break;
+            }
+        }
 
-     if (selectedRoom == null || selectedRoom.getAvailableRooms() <= 0) {
-         System.out.println("Sorry, there are no more available units for " + chosenRoom + " in project '" + selectedProject.getName() + "'.");
-         return;
-     }
+        if (selectedRoom == null || selectedRoom.getAvailableRooms() <= 0) {
+            System.out.println("Sorry, there are no more available units for " + chosenRoom + " in project '" + selectedProject.getName() + "'.");
+            return;
+        }
 
-     // Proceed with application
-     boolean success = applicationManager.apply(this.applicant, selectedProject, chosenRoom);
+        // Proceed with application
+        boolean success = applicationManager.apply(this.applicant, selectedProject, chosenRoom);
 
-     if (success) {
-        System.out.println("Application submitted successfully. Status is PENDING.");
-    } else {
-         System.out.println("Application submission failed.");
+        if (success) {
+            System.out.println("Application submitted successfully. Status is PENDING.");
+        } else {
+            System.out.println("Application submission failed.");
+        }
     }
-     
-    }
 
+    /**
+      * Determines the room types within a project for which the applicant is eligible
+      * based on age, marital status, and room availability.
+      *
+      * @param applicant The applicant whose eligibility is being checked.
+      * @param project   The project being considered.
+      * @return A List of RoomType the applicant can apply for in this project.
+      */
     protected List<RoomType> getEligibleRoomTypesForProject(Applicant applicant, Project project) {
         List<RoomType> eligibleTypes = new ArrayList<>();
         if (project == null || project.getRooms() == null) return eligibleTypes;
@@ -324,12 +377,20 @@ public class ApplicantUI {
         return eligibleTypes;
     }
 
-
+    /**
+     * Displays the applicant's current BTO application status.
+     */
     protected void viewApplicationStatus() {
         System.out.println("========== My Application Status ==========");
         displayApplicantApplicationStatus(this.applicant);
     }
 
+    /**
+      * Helper method to display the application status details for a given applicant.
+      * Shows project name, chosen room, status, and relevant messages based on the status.
+      *
+      * @param applicantForStatus The applicant whose status needs to be displayed.
+      */
      protected void displayApplicantApplicationStatus(Applicant applicantForStatus) {
          Project appliedProject = applicantForStatus.getAppliedProject();
          ApplicationStatus status = applicantForStatus.getStatus();
@@ -360,6 +421,10 @@ public class ApplicantUI {
          }
     }
 
+    /**
+     * Handles the process for an applicant to request withdrawal of their application.
+     * Confirms the action and calls ApplicationManager to set status to PENDING_WITHDRAWAL.
+     */
     protected void withdrawApplication() {
         System.out.println("=========== Withdraw Application ==========");
 
@@ -396,6 +461,10 @@ public class ApplicantUI {
             }
     }
 
+    /**
+     * Handles the submission of a new enquiry by the applicant.
+     * Displays available projects, prompts for selection and message, then calls EnquiryManager.
+     */
     protected void submitEnquiry() {
         System.out.println("============= Submit Enquiry ==============");
         
@@ -439,7 +508,11 @@ public class ApplicantUI {
         System.out.println();
     }
  
-
+    /**
+     * Handles viewing, editing, and deleting the applicant's own enquiries.
+     * Displays enquiries, prompts for action, and calls EnquiryManager.
+     * Editing/deleting is only allowed if the enquiry has not been replied to.
+     */
     protected void viewEditDeleteMyEnquiries() {
         System.out.println("--- View/Edit/Delete My Enquiries ---");
         List<Enquiry> myEnquiries = enquiryManager.getEnquiriesByApplicant(applicant.getNRIC());
@@ -526,7 +599,10 @@ public class ApplicantUI {
         } else { System.out.println("Action cancelled."); }
     }
 
-     protected void viewApplicantProfile() {
+    /**
+      * Displays the applicant's profile information, including basic details and application status.
+      */
+    protected void viewApplicantProfile() {
         System.out.println("=========== Applicant Profile ==============");
         System.out.println(" Name:           " + applicant.getName());
         System.out.println(" NRIC:           " + applicant.getNRIC());
@@ -537,12 +613,22 @@ public class ApplicantUI {
         System.out.println("============================================");
     }
 
-     private boolean isValidNRIC(String nric) {
+    /**
+      * Private helper method to validate NRIC format.
+      * @param nric The NRIC string to validate.
+      * @return true if the format is valid (S/T + 7 digits + letter), false otherwise.
+      */
+    private boolean isValidNRIC(String nric) {
         if (nric == null) return false;
         return nric.matches("^[ST]\\d{7}[A-Za-z]$");
     }
-     
-     private void manageFilters() {
+    
+    /**
+      * Manages user interaction for setting, viewing, and removing project view filters.
+      * Calls the static method in FilterUI to handle the filter settings menu
+      * and updates the applicant's filter settings via FilterManager.
+      */
+    private void manageFilters() {
     	    FilterUI.promptFilterSettings(scanner, filter);
     	    filterManager.setFilter(applicant.getNRIC(), filter);
     	    filterManager.saveFilters();

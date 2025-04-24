@@ -15,6 +15,12 @@ import control.*;
 import entities.*;
 import enums.*;
 
+/**
+ * Provides the command-line user interface for users logged in as HDB Managers.
+ * Displays a menu of available actions specific to managers, such as managing
+ * projects, approving/rejecting applications and registrations, handling enquiries,
+ * generating reports, and managing their own profile and password.
+ */
 public class HDBManagerUI {
 
     private final Manager manager;
@@ -31,7 +37,22 @@ public class HDBManagerUI {
     private final Filter filter;
     private final FilterManager filterManager;
  
-
+    /**
+     * Constructs an HDBManagerUI instance.
+     * Initializes the UI with the logged-in manager and necessary manager dependencies.
+     *
+     * @param manager                   The Manager user for this UI session.
+     * @param projectManager            Manager for project data.
+     * @param applicationManager        Manager for BTO applications.
+     * @param officerRegistrationManager Manager for officer registrations.
+     * @param enquiryManager            Manager for enquiries.
+     * @param reportManager             Manager for report generation.
+     * @param applicantUserManager      Manager for applicant user data.
+     * @param officerUserManager        Manager for officer user data.
+     * @param managerUserManager        Manager for manager user data.
+     * @param loginManager              Manager to handle logout.
+     * @param filterManager             Manager for user view filters.
+     */
     public HDBManagerUI(Manager manager,
                         ProjectManager projectManager,
                         ApplicationManager applicationManager,
@@ -58,6 +79,10 @@ public class HDBManagerUI {
         this.scanner = new Scanner(System.in);
     }
 
+    /**
+     * Displays the main menu for the HDB Manager dashboard and handles user input.
+     * Loops until the user chooses to log out, calling appropriate methods for each action.
+     */
     public void showMenu() {
         boolean logout = false;
         while (!logout) {
@@ -123,6 +148,11 @@ public class HDBManagerUI {
 
     // --- Private Helper Methods for Menu Options ---
 
+    /**
+     * Guides the manager through creating a new BTO project listing.
+     * Prompts for project details, validates input (name uniqueness, dates, slots),
+     * checks for manager date conflicts, and adds the project via ProjectManager.
+     */
     private void createProject() {
         System.out.println("============== Create New BTO Listing =============");
         try {
@@ -188,6 +218,11 @@ public class HDBManagerUI {
         }
     }
 
+    /**
+     * Helper method to prompt for and create a Room object based on user input.
+     * @param type The RoomType to get details for.
+     * @return A Room object, or null if input is invalid or user enters 0 units.
+     */
     private Room createRoomInput(RoomType type) {
          System.out.println("=============== Details for " + type.name() + " ===============");
          System.out.print("Enter Total Number of Units (0 if none): ");
@@ -214,6 +249,11 @@ public class HDBManagerUI {
          return new Room(type, totalUnits, totalUnits, price);
     }
 
+    /**
+      * Helper method to prompt the user for a date and parse it.
+      * @param prompt The message to display to the user.
+      * @return The parsed LocalDate, or null if the format is invalid.
+      */
      private LocalDate promptForDate(String prompt) {
          System.out.print(prompt);
          String dateStr = scanner.nextLine();
@@ -226,6 +266,13 @@ public class HDBManagerUI {
          }
      }
 
+     /**
+     * Checks if the current manager is already managing another project
+     * whose application period overlaps with the given new period.
+     * @param newOpen The start date of the new period.
+     * @param newClose The end date of the new period.
+     * @return true if an overlap exists, false otherwise.
+     */
     private boolean isManagerHandlingOverlappingProject(LocalDate newOpen, LocalDate newClose) {
         if (newOpen == null || newClose == null) return false;
 
@@ -245,7 +292,11 @@ public class HDBManagerUI {
         return false;
     }
 
-
+    /**
+     * Manages viewing, editing, and deleting project listings.
+     * Allows filtering view by 'All Projects' or 'My Projects'.
+     * Applies user-defined filters. Prompts for action on a selected project.
+     */
     private void manageProjects() {
         System.out.println("============ View/Edit/Delete Projects ============");
         System.out.println("Choose an option:");
@@ -308,6 +359,10 @@ public class HDBManagerUI {
         else { System.out.println("Action cancelled."); }
     }
 
+    /**
+      * Helper method to display a detailed list of projects.
+      * @param projects The list of Project objects to display.
+      */
      private void displayProjectListDetailed(List<Project> projects) {
         System.out.println("---------------------------------------------------------------------------------------------------------------------------");
         System.out.printf(" %-25s | %-15s | %-10s | %-10s | %-10s | %-5s | %-15s | %s%n",
@@ -335,6 +390,10 @@ public class HDBManagerUI {
          System.out.println("---------------------------------------------------------------------------------------------------------------------------");
     }
 
+    /**
+     * Handles editing specific fields of a project managed by the current manager.
+     * @param project The Project object to edit.
+     */
     private void editProject(Project project) {
     	System.out.println();
         System.out.println("=========== Edit Project: " + project.getName() + " ===========");
@@ -452,6 +511,11 @@ public class HDBManagerUI {
         projectManager.saveProjects("data/ProjectList.csv");
     }
 
+    /**
+     * Handles deleting a project managed by the current manager.
+     * Confirms deletion and updates related data (applications, officer registrations).
+     * @param project The Project object to delete.
+     */
     private void deleteProject(Project project) {
         System.out.println("=========== Delete Project: " + project.getName() + " ===========");
         System.out.print("Are you sure you want to permanently delete project '" + project.getName() + "'? (Y/N): ");
@@ -504,6 +568,9 @@ public class HDBManagerUI {
         }
     }
 
+    /**
+      * Handles toggling the visibility of a project managed by the current manager.
+      */
      private void toggleProjectVisibility() {
         System.out.println("============ Toggle Project Visibility ============");
         List<Project> myProjects = projectManager.getProjects().stream()
@@ -532,7 +599,10 @@ public class HDBManagerUI {
         }
     }
 
-
+    /**
+     * Manages viewing and approving/rejecting pending HDB officer registration requests
+     * for projects handled by the current manager.
+     */
     private void manageOfficerRegistrations() {
         System.out.println("========== Manage Officer Registrations ===========");
         List<Project> myProjects = projectManager.getProjects().stream()
@@ -594,6 +664,10 @@ public class HDBManagerUI {
         }
     }
 
+    /**
+     * Manages viewing and approving/rejecting PENDING BTO applications
+     * for projects handled by the current manager.
+     */
     private void manageBTOApplications() {
         System.out.println("============= Manage BTO Applications =============");
          List<Project> myProjects = projectManager.getProjects().stream()
@@ -665,6 +739,10 @@ public class HDBManagerUI {
         }
     }
 
+    /**
+     * Manages processing application withdrawal requests (status PENDING_WITHDRAWAL)
+     * for projects handled by the current manager. Allows approving or rejecting the withdrawal.
+     */
     private void manageApplicationWithdrawals() {
         System.out.println("========= Process Application Withdrawals =========");
 
@@ -742,7 +820,9 @@ public class HDBManagerUI {
         }
     }
 
-
+    /**
+     * Displays all enquiries submitted across all projects in the system.
+     */
     private void viewAllEnquiries() {
         System.out.println("================ View All Enquiries ================");
         List<Enquiry> allEnquiries = enquiryManager.getAllEnquiries();
@@ -760,6 +840,10 @@ public class HDBManagerUI {
         }
     }
 
+    /**
+     * Allows the manager to reply to enquiries specifically for the projects they handle.
+     * Displays relevant enquiries and prompts for selection and reply message.
+     */
     private void replyToMyProjectEnquiries() {
          System.out.println("====== Reply to Enquiries for Projects You Handle ======");
          List<Project> myProjects = projectManager.getProjects().stream()
@@ -812,7 +896,10 @@ public class HDBManagerUI {
 
     }
 
-
+    /**
+     * Generates and displays a report of booked applicants based on selected filters.
+     * Uses ReportManager to generate the report data.
+     */
     private void generateBookingReport() {
         System.out.println("========== Generate Applicant Booking Report ==========");
         if (reportManager != null) {
@@ -854,8 +941,11 @@ public class HDBManagerUI {
         }
     }
 
-    
-
+    /**
+     * Handles changing the manager's password.
+     * Prompts for current and new passwords, validates, and calls ManagerUserManager.
+     * Redirects to login upon successful change.
+     */
     private void changePassword() {
          System.out.println("=========== Change Password ==========");
          System.out.print("Enter current password: ");
@@ -894,6 +984,9 @@ public class HDBManagerUI {
         }
     }
 
+    /**
+     * Displays the manager's profile information, including basic details and projects managed.
+     */
     private void viewManagerProfile() {
         System.out.println("========== Manager Profile ==========");
         System.out.println(" Name:           " + manager.getName());
@@ -916,9 +1009,13 @@ public class HDBManagerUI {
         System.out.println("===================================");
     }
     
+    /**
+     * Manages user interaction for setting/viewing/removing project view filters for the manager.
+     * Calls FilterUI and saves changes via FilterManager.
+     */
     private void manageFilters() {
         FilterUI.promptFilterSettings(scanner, filter);
         filterManager.setFilter(manager.getNRIC(), filter);
-        filterManager.saveFilters(); // Save to CSV
+        filterManager.saveFilters();
     }
 }

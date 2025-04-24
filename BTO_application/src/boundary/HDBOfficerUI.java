@@ -13,6 +13,12 @@ import control.*;
 import entities.*;
 import enums.*;
 
+/**
+ * Provides the command-line user interface for users logged in as HDB Officers.
+ * Extends ApplicantUI to include all applicant functionalities, and adds
+ * specific actions for officers, such as registering to handle projects,
+ * managing project enquiries, booking flats for applicants, and generating receipts.
+ */
 public class HDBOfficerUI extends ApplicantUI {
 
     private Officer officer;
@@ -21,6 +27,24 @@ public class HDBOfficerUI extends ApplicantUI {
     private BookingManager bookingManager; 
     private UserManager<Officer> officerUserManager;
     
+    /**
+     * Constructs an HDBOfficerUI instance.
+     * Initializes the UI with the logged-in officer and necessary manager dependencies,
+     * calling the superclass constructor for shared managers.
+     *
+     * @param officer                   The Officer user for this UI session.
+     * @param applicantManager          Manager for applicant-specific project viewing logic.
+     * @param applicantUserManager      Manager for base applicant user data operations.
+     * @param officerUserManager        Manager for officer user data operations.
+     * @param loginManager              Manager to handle logout.
+     * @param enquiryManager            Manager for enquiries.
+     * @param applicationManager        Manager for BTO applications.
+     * @param projectManager            Manager for general project data.
+     * @param officerRegistrationManager Manager for officer project registrations.
+     * @param bookingManager            Manager for flat booking.
+     * @param filterManager             Manager for user view filters.
+     * @throws IllegalArgumentException if any required manager or the officer is null.
+     */
     public HDBOfficerUI(Officer officer,
                         ApplicantManager applicantManager,
                         UserManager<Applicant> applicantUserManager,
@@ -49,6 +73,11 @@ public class HDBOfficerUI extends ApplicantUI {
         this.bookingManager = bookingManager;
     }
 
+    /**
+     * Displays the main menu for the HDB Officer dashboard and handles user input.
+     * Includes both inherited Applicant actions and specific Officer actions.
+     * Loops until the user chooses to log out.
+     */
     @Override
     public void showMenu() {
         boolean logout = false;
@@ -157,6 +186,10 @@ public class HDBOfficerUI extends ApplicantUI {
         System.out.println("Exiting Officer Dashboard.");
     }
 
+    /**
+     * Overrides the changePassword method to use the OfficerUserManager for saving.
+     * Handles changing the officer's password after verification.
+     */
     @Override
     protected void changePassword() {
         System.out.print("Enter current password: ");
@@ -193,6 +226,10 @@ public class HDBOfficerUI extends ApplicantUI {
         }
     }
     
+    /**
+     * Overrides viewAvailableProjects to clarify its purpose for officers (viewing projects to apply for).
+     * The underlying logic for filtering based on applicant eligibility remains the same.
+     */
     protected void viewAvailableProjects() {
         System.out.println("========== Available BTO Projects for You ============================================================");
         // Use the same applicantManager but pass a flag indicating this is an officer
@@ -207,12 +244,8 @@ public class HDBOfficerUI extends ApplicantUI {
    
     /**
      * Overrides the applicant's applyForProject method to add checks specific to HDB Officers.
-     * An officer cannot apply for a project if:
-     * 1. They are already registered (PENDING or APPROVED) for that SAME project.
-     * 2. They are already registered (PENDING or APPROVED) for ANOTHER project whose
-     * application period overlaps with the target project's application period.
-     * If these checks pass, it proceeds with the standard application logic inherited
-     * from ApplicantUI.
+     * Prevents application if the officer is registered (PENDING/APPROVED) for the same project
+     * or for another project with an overlapping application period.
      */
     @Override
     protected void applyForProject() {
@@ -348,8 +381,14 @@ public class HDBOfficerUI extends ApplicantUI {
         }
     }
 
+    // --- Officer-Specific Method Implementations ---
 
-    // Officer-Specific Method Implementations
+    /**
+     * Handles the process for an officer to register to handle a BTO project.
+     * Displays only projects that are currently visible ('on') and meet other criteria.
+     * Prompts the officer to select a project and submits the registration request
+     * via OfficerRegistrationManager. Only shows projects with visibility 'true'.
+     */
     private void registerToHandleProject() {
         System.out.println("======= Register to Handle Project =======");
         System.out.println("Available Projects:");
@@ -444,7 +483,12 @@ public class HDBOfficerUI extends ApplicantUI {
         }
     }
 
-    // Helper method to display projects with dates
+    /**
+     * Displays a list of projects with their names, neighbourhoods, open and close dates.
+     * Uses a formatted string for better readability.
+     *
+     * @param projects The list of projects to display.
+     */
     private void displayProjectListWithDates(List<Project> projects) {
         String formatStr = " %-25s | %-15s | %-12s | %-12s%n";
         System.out.println("------------------------------------------------------------------------------");
@@ -466,13 +510,21 @@ public class HDBOfficerUI extends ApplicantUI {
         System.out.println("------------------------------------------------------------------------------");
     }
 
-    // Helper method to format dates consistently
+    /** 
+     * Formats a LocalDate to a string in the format "dd-MM-yy".
+     * If the date is null, returns "N/A".
+     *
+     * @param date The LocalDate to format.
+     * @return A formatted string representation of the date.
+     */
     private String formatDate(LocalDate date) {
         if (date == null) return "N/A";
         return date.format(DateTimeFormatter.ofPattern("dd-MM-yy"));
     }
 
-
+    /**
+     * Displays the officer's registration status for each project they have registered for.
+     */
     private void viewOfficerRegistrationStatus() {
         System.out.println("===== You Officer Registration Status =====");
         List<Project> projects = officer.getRegisteredProjects();
@@ -488,6 +540,9 @@ public class HDBOfficerUI extends ApplicantUI {
         }
     }
 
+    /**
+     * Displays detailed information for projects the officer is currently APPROVED to handle.
+     */
     private void viewHandledProjectDetails() {
         System.out.println("============ Details of My Projects =========");
         boolean found = false;
@@ -502,6 +557,9 @@ public class HDBOfficerUI extends ApplicantUI {
         }
     }
 
+    /**
+     * Allows the officer to view and reply to enquiries for the projects they are APPROVED to handle.
+     */
     private void viewAndReplyToProjectEnquiries() {
         System.out.println("============= Reply My Enquiries ==========");
         List<Enquiry> replyableEnquiries = new ArrayList<>();
@@ -570,7 +628,10 @@ public class HDBOfficerUI extends ApplicantUI {
         System.out.println("Reply submitted successfully.");
     }
 
-
+    /**
+     * Handles the process for an officer to book a flat for an applicant with SUCCESSFUL status.
+     * Validates officer authority and applicant status, then calls BookingManager.
+     */
     private void bookFlatForApplicant() {
         System.out.println("=========== Book Flat for Successful Applicants ===========");
 
@@ -641,6 +702,10 @@ public class HDBOfficerUI extends ApplicantUI {
         }
     }
 
+    /**
+     * Generates and displays a booking receipt for a selected applicant with BOOKED status.
+     * Only shows applicants from projects handled by the current officer.
+     */
     private void generateApplicantReceipt() {
         System.out.println("========== Generate Booking Receipt ==========");
 
@@ -697,7 +762,10 @@ public class HDBOfficerUI extends ApplicantUI {
         }
     }
 
-
+    /**
+      * Displays the officer's profile, including basic user details,
+      * their HDB Officer registration statuses, and their applicant status (if any).
+      */
      private void viewOfficerProfile() {
          System.out.println("============= Officer Profile =============");
          System.out.println(" Name:           " + officer.getName());
@@ -724,9 +792,13 @@ public class HDBOfficerUI extends ApplicantUI {
      }
 
 
-    // Helper Methods (Could be moved or shared)
+    // Helper Methods
 
-    // Basic display for project selection
+    /**
+     * Helper method to display a basic list of projects (Name and Status).
+     * Used internally, potentially for simpler project selection scenarios.
+     * @param projects List of projects to display.
+     */
     private void displayProjectListBasic(List<Project> projects) {
         System.out.println("-------------------------------------------");
         System.out.printf(" %-20s | %s%n", "Project Name", "Status");
@@ -751,7 +823,11 @@ public class HDBOfficerUI extends ApplicantUI {
         System.out.println("-------------------------------------------");
     }
 
-    // Detailed project display
+    /**
+     * Helper method to display detailed information about a single project.
+     * Used when viewing details of handled projects.
+     * @param p The Project object to display details for.
+     */
     private void displayProjectDetails(Project p) {
          if (p == null) {
               System.out.println("Project details cannot be displayed (Project is null).");
@@ -777,11 +853,20 @@ public class HDBOfficerUI extends ApplicantUI {
          System.out.println("=====================================================================================");
     }
 
-     private boolean isValidNRIC(String nric) {
+    /**
+     * Helper method to validate NRIC format. Inherited from ApplicantUI but potentially used here.
+     * @param nric The NRIC string to validate.
+     * @return true if the format is valid, false otherwise.
+     */
+    private boolean isValidNRIC(String nric) {
         if (nric == null) return false;
         return nric.matches("^[ST]\\d{7}[A-Za-z]$");
     }
-     
+    
+    /**
+      * Manages user interaction for setting/viewing/removing project filters.
+      * Calls FilterUI and saves changes via FilterManager. Inherited from ApplicantUI.
+      */
      private void manageFilters() {
  	    FilterUI.promptFilterSettings(scanner, filter);
  	    filterManager.setFilter(officer.getNRIC(), filter);
