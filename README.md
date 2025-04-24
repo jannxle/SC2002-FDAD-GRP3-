@@ -27,8 +27,13 @@ mkdir bin
 ```
 
 ### 3. Compile the Java source file
+> For MacOS:
 ```bash
 javac -d bin src/**/*.java
+```
+> For Windows:
+```bash
+javac -d bin src\auth\*.java src\boundary\*.java src\control\*.java src\entities\*.java src\enums\*.java src\main\*.java src\utils\*.java
 ```
 
 ### 4. Run the application
