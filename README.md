@@ -6,7 +6,8 @@
 <img width="486" alt="image" src="https://github.com/user-attachments/assets/29f4d2f4-9f92-4018-bf45-e63ab8e75cc7" />
 
 ## Project Structure overview: 
-<img width="515" alt="image" src="https://github.com/user-attachments/assets/b2a019b9-374d-40cc-9a8f-9da646f8a761" />
+<img width="290" alt="image" src="https://github.com/user-attachments/assets/587dc5b7-0ec7-4ab5-9fa5-b2c036f820b5" />
+
 
 
 ## Scripts
